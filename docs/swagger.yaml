@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  handler.BindInput:
+    properties:
+      invite_code:
+        description: InviteCode 对方生成的6位邀请码
+        example: A3KP7X
+        type: string
+    required:
+    - invite_code
+    type: object
   handler.RefreshTokenInput:
     properties:
       refresh_token:
@@ -99,6 +108,29 @@ definitions:
     required:
     - new_password
     - old_password
+    type: object
+  service.CoupleInfo:
+    properties:
+      created_at:
+        description: CreatedAt 绑定时间
+        type: string
+      id:
+        description: ID 伴侣关系唯一 ID
+        type: string
+      partner:
+        allOf:
+        - $ref: '#/definitions/model.User'
+        description: Partner 对方的用户信息
+    type: object
+  service.InviteCodeResult:
+    properties:
+      expires_at:
+        description: ExpiresAt 邀请码过期时间，过期后需要重新生成
+        type: string
+      invite_code:
+        description: InviteCode 6位邀请码，有效期15分钟
+        example: A3KP7X
+        type: string
     type: object
   service.LoginInput:
     properties:
@@ -306,6 +338,145 @@ paths:
       summary: 用户注册
       tags:
       - 认证
+  /api/v1/couple/bind:
+    post:
+      consumes:
+      - application/json
+      description: 输入对方生成的邀请码完成伴侣绑定。绑定成功后，双方可以共享亲密记录、心愿清单等数据。每个用户同时只能有一段有效的伴侣关系。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 邀请码
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.BindInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 绑定成功，返回伴侣信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.CoupleInfo'
+              type: object
+        "400":
+          description: 邀请码无效/已过期/不能绑定自己/已有伴侣
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 绑定伴侣
+      tags:
+      - 伴侣
+  /api/v1/couple/info:
+    get:
+      description: 获取当前用户的伴侣关系信息，包括对方的用户资料和绑定时间
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 伴侣信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.CoupleInfo'
+              type: object
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 暂无伴侣关系
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取伴侣信息
+      tags:
+      - 伴侣
+  /api/v1/couple/invite:
+    post:
+      description: 生成一个6位邀请码，有效期15分钟。将邀请码分享给伴侣，对方通过邀请码完成绑定。如果已有未使用的邀请码，调用此接口会刷新邀请码并重置有效期。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 邀请码信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.InviteCodeResult'
+              type: object
+        "400":
+          description: 已有伴侣，无法生成邀请码
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 生成邀请码
+      tags:
+      - 伴侣
+  /api/v1/couple/unbind:
+    delete:
+      description: 解除与当前伴侣的绑定关系。解除后双方各自的历史记录仍然保留，但不再共享新数据。此操作不可撤销，请谨慎操作。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 解除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 暂无伴侣关系
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 解除伴侣关系
+      tags:
+      - 伴侣
   /api/v1/user/password:
     put:
       consumes:

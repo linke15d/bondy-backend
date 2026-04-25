@@ -31,6 +31,7 @@ func Init(cfg *config.DBConfig) *gorm.DB {
 	if err := db.AutoMigrate(
 		&model.User{},
 		&model.RefreshToken{},
+		&model.Couple{},
 	); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}

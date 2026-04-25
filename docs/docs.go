@@ -247,6 +247,238 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/couple/bind": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "输入对方生成的邀请码完成伴侣绑定。绑定成功后，双方可以共享亲密记录、心愿清单等数据。每个用户同时只能有一段有效的伴侣关系。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "伴侣"
+                ],
+                "summary": "绑定伴侣",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "邀请码",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.BindInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "绑定成功，返回伴侣信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.CoupleInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "邀请码无效/已过期/不能绑定自己/已有伴侣",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/couple/info": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户的伴侣关系信息，包括对方的用户资料和绑定时间",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "伴侣"
+                ],
+                "summary": "获取伴侣信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "伴侣信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.CoupleInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "暂无伴侣关系",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/couple/invite": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "生成一个6位邀请码，有效期15分钟。将邀请码分享给伴侣，对方通过邀请码完成绑定。如果已有未使用的邀请码，调用此接口会刷新邀请码并重置有效期。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "伴侣"
+                ],
+                "summary": "生成邀请码",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "邀请码信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.InviteCodeResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "已有伴侣，无法生成邀请码",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/couple/unbind": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "解除与当前伴侣的绑定关系。解除后双方各自的历史记录仍然保留，但不再共享新数据。此操作不可撤销，请谨慎操作。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "伴侣"
+                ],
+                "summary": "解除伴侣关系",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "解除成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "暂无伴侣关系",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/password": {
             "put": {
                 "security": [
@@ -433,6 +665,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handler.BindInput": {
+            "type": "object",
+            "required": [
+                "invite_code"
+            ],
+            "properties": {
+                "invite_code": {
+                    "description": "InviteCode 对方生成的6位邀请码",
+                    "type": "string",
+                    "example": "A3KP7X"
+                }
+            }
+        },
         "handler.RefreshTokenInput": {
             "type": "object",
             "required": [
@@ -559,6 +804,41 @@ const docTemplate = `{
                     "description": "OldPassword 当前使用的旧密码，用于验证身份",
                     "type": "string",
                     "example": "oldpassword123"
+                }
+            }
+        },
+        "service.CoupleInfo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "CreatedAt 绑定时间",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID 伴侣关系唯一 ID",
+                    "type": "string"
+                },
+                "partner": {
+                    "description": "Partner 对方的用户信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    ]
+                }
+            }
+        },
+        "service.InviteCodeResult": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "description": "ExpiresAt 邀请码过期时间，过期后需要重新生成",
+                    "type": "string"
+                },
+                "invite_code": {
+                    "description": "InviteCode 6位邀请码，有效期15分钟",
+                    "type": "string",
+                    "example": "A3KP7X"
                 }
             }
         },
