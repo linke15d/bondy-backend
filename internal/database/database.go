@@ -32,6 +32,9 @@ func Init(cfg *config.DBConfig) *gorm.DB {
 		&model.User{},
 		&model.RefreshToken{},
 		&model.Couple{},
+		&model.Tag{},
+		&model.Position{},
+		&model.Record{},
 	); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}

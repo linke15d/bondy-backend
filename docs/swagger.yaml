@@ -9,6 +9,27 @@ definitions:
     required:
     - invite_code
     type: object
+  handler.GetTagsInput:
+    properties:
+      type:
+        description: Type 标签类型：LOCATION（地点标签）或 ACTIVITY（活动标签）
+        enum:
+        - LOCATION
+        - ACTIVITY
+        example: LOCATION
+        type: string
+    required:
+    - type
+    type: object
+  handler.RecordIDInput:
+    properties:
+      id:
+        description: ID 记录唯一标识
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - id
+    type: object
   handler.RefreshTokenInput:
     properties:
       refresh_token:
@@ -17,6 +38,94 @@ definitions:
         type: string
     required:
     - refresh_token
+    type: object
+  model.Position:
+    properties:
+      couple_id:
+        description: CoupleID 所属伴侣 ID，系统姿势此字段为空
+        type: string
+      created_at:
+        description: CreatedAt 创建时间
+        type: string
+      id:
+        description: ID 姿势唯一标识
+        type: string
+      is_system:
+        description: IsSystem 是否为系统预设姿势
+        type: boolean
+      name:
+        description: Name 姿势名称
+        example: 传教士
+        type: string
+    type: object
+  model.Record:
+    properties:
+      couple_id:
+        description: CoupleID 所属伴侣关系 ID，关联 couples 表
+        type: string
+      created_at:
+        description: CreatedAt 记录创建时间
+        type: string
+      created_by_id:
+        description: CreatedByID 创建此记录的用户 ID
+        type: string
+      duration_mins:
+        description: DurationMins 持续时长（分钟），可选
+        example: 30
+        type: integer
+      happened_at:
+        description: HappenedAt 实际发生时间，支持回填历史记录
+        type: string
+      id:
+        description: ID 记录唯一标识，UUID 格式
+        type: string
+      mood:
+        description: Mood 心情评分 1-5，1最差5最好，可选
+        example: 4
+        type: integer
+      note_encrypted:
+        description: NoteEncrypted 备注内容，客户端加密后存储的密文，后端不解密
+        type: string
+      positions:
+        description: Positions 关联的姿势列表
+        items:
+          $ref: '#/definitions/model.Position'
+        type: array
+      satisfaction:
+        description: Satisfaction 满意度评分 1-5，1最差5最好，可选
+        example: 5
+        type: integer
+      tags:
+        description: Tags 关联的标签列表（地点、活动）
+        items:
+          $ref: '#/definitions/model.Tag'
+        type: array
+      updated_at:
+        description: UpdatedAt 记录最后更新时间
+        type: string
+    type: object
+  model.Tag:
+    properties:
+      couple_id:
+        description: CoupleID 所属伴侣 ID，系统标签此字段为空
+        type: string
+      created_at:
+        description: CreatedAt 创建时间
+        type: string
+      id:
+        description: ID 标签唯一标识
+        type: string
+      is_system:
+        description: IsSystem 是否为系统预设标签，系统标签不可删除
+        type: boolean
+      name:
+        description: Name 标签名称，如"家里"、"酒店"、"浪漫"
+        example: 家里
+        type: string
+      type:
+        description: Type 标签类型：LOCATION（地点）或 ACTIVITY（活动）
+        example: LOCATION
+        type: string
     type: object
   model.User:
     properties:
@@ -122,6 +231,50 @@ definitions:
         - $ref: '#/definitions/model.User'
         description: Partner 对方的用户信息
     type: object
+  service.CreateRecordInput:
+    properties:
+      duration_mins:
+        description: DurationMins 持续时长（分钟），可选
+        example: 30
+        type: integer
+      happened_at:
+        description: HappenedAt 实际发生时间，支持回填过去的记录，格式 RFC3339
+        example: "2024-01-15T20:00:00Z"
+        type: string
+      mood:
+        description: Mood 心情评分 1-5，1最差5最好，可选
+        example: 4
+        maximum: 5
+        minimum: 1
+        type: integer
+      note_encrypted:
+        description: NoteEncrypted 备注密文，由客户端加密后传入，后端原样存储不解密
+        example: U2FsdGVkX1...
+        type: string
+      position_ids:
+        description: PositionIDs 姿势 ID 列表，可同时关联多个姿势
+        example:
+        - '[''uuid1'']'
+        items:
+          type: string
+        type: array
+      satisfaction:
+        description: Satisfaction 满意度评分 1-5，1最差5最好，可选
+        example: 5
+        maximum: 5
+        minimum: 1
+        type: integer
+      tag_ids:
+        description: TagIDs 标签 ID 列表，可同时关联多个标签
+        example:
+        - '[''uuid1'''
+        - '''uuid2'']'
+        items:
+          type: string
+        type: array
+    required:
+    - happened_at
+    type: object
   service.InviteCodeResult:
     properties:
       expires_at:
@@ -145,6 +298,47 @@ definitions:
     required:
     - email
     - password
+    type: object
+  service.RecordListInput:
+    properties:
+      month:
+        description: Month 按月份过滤，不传则返回全部，需要和 year 一起使用
+        example: 1
+        maximum: 12
+        minimum: 1
+        type: integer
+      page:
+        description: Page 页码，从 1 开始，默认 1
+        example: 1
+        minimum: 1
+        type: integer
+      page_size:
+        description: PageSize 每页数量，默认 20，最大 50
+        example: 20
+        maximum: 50
+        minimum: 1
+        type: integer
+      year:
+        description: Year 按年份过滤，不传则返回全部
+        example: 2024
+        type: integer
+    type: object
+  service.RecordListResult:
+    properties:
+      list:
+        description: List 记录列表
+        items:
+          $ref: '#/definitions/model.Record'
+        type: array
+      page:
+        description: Page 当前页码
+        type: integer
+      page_size:
+        description: PageSize 每页数量
+        type: integer
+      total:
+        description: Total 总记录数
+        type: integer
     type: object
   service.RegisterInput:
     properties:
@@ -184,6 +378,42 @@ definitions:
         maxLength: 20
         minLength: 2
         type: string
+    type: object
+  service.UpdateRecordInput:
+    properties:
+      duration_mins:
+        description: DurationMins 修改时长
+        example: 45
+        type: integer
+      happened_at:
+        description: HappenedAt 修改发生时间
+        example: "2024-01-15T21:00:00Z"
+        type: string
+      mood:
+        description: Mood 修改心情评分
+        example: 3
+        maximum: 5
+        minimum: 1
+        type: integer
+      note_encrypted:
+        description: NoteEncrypted 修改备注密文
+        type: string
+      position_ids:
+        description: PositionIDs 重新设置姿势列表（全量替换）
+        items:
+          type: string
+        type: array
+      satisfaction:
+        description: Satisfaction 修改满意度评分
+        example: 4
+        maximum: 5
+        minimum: 1
+        type: integer
+      tag_ids:
+        description: TagIDs 重新设置标签列表（全量替换）
+        items:
+          type: string
+        type: array
     type: object
 host: localhost:8080
 info:
@@ -477,6 +707,288 @@ paths:
       summary: 解除伴侣关系
       tags:
       - 伴侣
+  /api/v1/records/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建一条新的亲密记录。必须先绑定伴侣才能创建记录。备注内容请在客户端加密后传入密文，后端不会解密存储。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 记录内容
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateRecordInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Record'
+              type: object
+        "400":
+          description: 参数错误或未绑定伴侣
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建记录
+      tags:
+      - 记录
+  /api/v1/records/delete:
+    post:
+      consumes:
+      - application/json
+      description: 软删除一条亲密记录，删除后不可恢复。只能删除自己伴侣关系下的记录。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 记录 ID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RecordIDInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 参数错误或记录不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除记录
+      tags:
+      - 记录
+  /api/v1/records/detail:
+    post:
+      consumes:
+      - application/json
+      description: 获取单条亲密记录的详细信息，包括关联的标签和姿势。只能查看自己伴侣关系下的记录。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 记录 ID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RecordIDInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 记录详情
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Record'
+              type: object
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 记录不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取记录详情
+      tags:
+      - 记录
+  /api/v1/records/list:
+    post:
+      consumes:
+      - application/json
+      description: 分页获取当前伴侣的亲密记录列表，按发生时间倒序排列。支持按年、月过滤。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 查询条件
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.RecordListInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 记录列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.RecordListResult'
+              type: object
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取记录列表
+      tags:
+      - 记录
+  /api/v1/records/positions:
+    post:
+      description: 获取可用的姿势列表，包括系统预设姿势和当前伴侣自定义姿势
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 姿势列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Position'
+                  type: array
+              type: object
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取姿势列表
+      tags:
+      - 记录
+  /api/v1/records/tags:
+    post:
+      consumes:
+      - application/json
+      description: 获取可用的标签列表，包括系统预设标签和当前伴侣自定义标签。type 传 LOCATION 获取地点标签，传 ACTIVITY
+        获取活动标签。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 标签类型
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.GetTagsInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 标签列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Tag'
+                  type: array
+              type: object
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取标签列表
+      tags:
+      - 记录
+  /api/v1/records/update:
+    post:
+      consumes:
+      - application/json
+      description: 更新一条亲密记录，只传需要修改的字段。标签和姿势列表为全量替换，传空数组表示清除所有关联。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 要更新的内容（需包含 id 字段）
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateRecordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新后的记录
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Record'
+              type: object
+        "400":
+          description: 参数错误或记录不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新记录
+      tags:
+      - 记录
   /api/v1/user/password/change:
     post:
       consumes:

@@ -479,6 +479,472 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/records/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建一条新的亲密记录。必须先绑定伴侣才能创建记录。备注内容请在客户端加密后传入密文，后端不会解密存储。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "记录"
+                ],
+                "summary": "创建记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "记录内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateRecordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Record"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或未绑定伴侣",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/records/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除一条亲密记录，删除后不可恢复。只能删除自己伴侣关系下的记录。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "记录"
+                ],
+                "summary": "删除记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "记录 ID",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.RecordIDInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/records/detail": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取单条亲密记录的详细信息，包括关联的标签和姿势。只能查看自己伴侣关系下的记录。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "记录"
+                ],
+                "summary": "获取记录详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "记录 ID",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.RecordIDInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "记录详情",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Record"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/records/list": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页获取当前伴侣的亲密记录列表，按发生时间倒序排列。支持按年、月过滤。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "记录"
+                ],
+                "summary": "获取记录列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "查询条件",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.RecordListInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "记录列表",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.RecordListResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/records/positions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取可用的姿势列表，包括系统预设姿势和当前伴侣自定义姿势",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "记录"
+                ],
+                "summary": "获取姿势列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "姿势列表",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Position"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/records/tags": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取可用的标签列表，包括系统预设标签和当前伴侣自定义标签。type 传 LOCATION 获取地点标签，传 ACTIVITY 获取活动标签。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "记录"
+                ],
+                "summary": "获取标签列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "标签类型",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.GetTagsInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "标签列表",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Tag"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/records/update": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新一条亲密记录，只传需要修改的字段。标签和姿势列表为全量替换，传空数组表示清除所有关联。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "记录"
+                ],
+                "summary": "更新记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "要更新的内容（需包含 id 字段）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateRecordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新后的记录",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Record"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/password/change": {
             "post": {
                 "security": [
@@ -680,6 +1146,36 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.GetTagsInput": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "description": "Type 标签类型：LOCATION（地点标签）或 ACTIVITY（活动标签）",
+                    "type": "string",
+                    "enum": [
+                        "LOCATION",
+                        "ACTIVITY"
+                    ],
+                    "example": "LOCATION"
+                }
+            }
+        },
+        "handler.RecordIDInput": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "description": "ID 记录唯一标识",
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
         "handler.RefreshTokenInput": {
             "type": "object",
             "required": [
@@ -690,6 +1186,125 @@ const docTemplate = `{
                     "description": "RefreshToken 登录时获得的长期刷新令牌",
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "model.Position": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "description": "CoupleID 所属伴侣 ID，系统姿势此字段为空",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt 创建时间",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID 姿势唯一标识",
+                    "type": "string"
+                },
+                "is_system": {
+                    "description": "IsSystem 是否为系统预设姿势",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Name 姿势名称",
+                    "type": "string",
+                    "example": "传教士"
+                }
+            }
+        },
+        "model.Record": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "description": "CoupleID 所属伴侣关系 ID，关联 couples 表",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt 记录创建时间",
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "description": "CreatedByID 创建此记录的用户 ID",
+                    "type": "string"
+                },
+                "duration_mins": {
+                    "description": "DurationMins 持续时长（分钟），可选",
+                    "type": "integer",
+                    "example": 30
+                },
+                "happened_at": {
+                    "description": "HappenedAt 实际发生时间，支持回填历史记录",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID 记录唯一标识，UUID 格式",
+                    "type": "string"
+                },
+                "mood": {
+                    "description": "Mood 心情评分 1-5，1最差5最好，可选",
+                    "type": "integer",
+                    "example": 4
+                },
+                "note_encrypted": {
+                    "description": "NoteEncrypted 备注内容，客户端加密后存储的密文，后端不解密",
+                    "type": "string"
+                },
+                "positions": {
+                    "description": "Positions 关联的姿势列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Position"
+                    }
+                },
+                "satisfaction": {
+                    "description": "Satisfaction 满意度评分 1-5，1最差5最好，可选",
+                    "type": "integer",
+                    "example": 5
+                },
+                "tags": {
+                    "description": "Tags 关联的标签列表（地点、活动）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Tag"
+                    }
+                },
+                "updated_at": {
+                    "description": "UpdatedAt 记录最后更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "model.Tag": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "description": "CoupleID 所属伴侣 ID，系统标签此字段为空",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt 创建时间",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID 标签唯一标识",
+                    "type": "string"
+                },
+                "is_system": {
+                    "description": "IsSystem 是否为系统预设标签，系统标签不可删除",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Name 标签名称，如\"家里\"、\"酒店\"、\"浪漫\"",
+                    "type": "string",
+                    "example": "家里"
+                },
+                "type": {
+                    "description": "Type 标签类型：LOCATION（地点）或 ACTIVITY（活动）",
+                    "type": "string",
+                    "example": "LOCATION"
                 }
             }
         },
@@ -830,6 +1445,64 @@ const docTemplate = `{
                 }
             }
         },
+        "service.CreateRecordInput": {
+            "type": "object",
+            "required": [
+                "happened_at"
+            ],
+            "properties": {
+                "duration_mins": {
+                    "description": "DurationMins 持续时长（分钟），可选",
+                    "type": "integer",
+                    "example": 30
+                },
+                "happened_at": {
+                    "description": "HappenedAt 实际发生时间，支持回填过去的记录，格式 RFC3339",
+                    "type": "string",
+                    "example": "2024-01-15T20:00:00Z"
+                },
+                "mood": {
+                    "description": "Mood 心情评分 1-5，1最差5最好，可选",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1,
+                    "example": 4
+                },
+                "note_encrypted": {
+                    "description": "NoteEncrypted 备注密文，由客户端加密后传入，后端原样存储不解密",
+                    "type": "string",
+                    "example": "U2FsdGVkX1..."
+                },
+                "position_ids": {
+                    "description": "PositionIDs 姿势 ID 列表，可同时关联多个姿势",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "['uuid1']"
+                    ]
+                },
+                "satisfaction": {
+                    "description": "Satisfaction 满意度评分 1-5，1最差5最好，可选",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1,
+                    "example": 5
+                },
+                "tag_ids": {
+                    "description": "TagIDs 标签 ID 列表，可同时关联多个标签",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "['uuid1'",
+                        "'uuid2']"
+                    ]
+                }
+            }
+        },
         "service.InviteCodeResult": {
             "type": "object",
             "properties": {
@@ -860,6 +1533,60 @@ const docTemplate = `{
                     "description": "Password 登录密码",
                     "type": "string",
                     "example": "password123"
+                }
+            }
+        },
+        "service.RecordListInput": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "description": "Month 按月份过滤，不传则返回全部，需要和 year 一起使用",
+                    "type": "integer",
+                    "maximum": 12,
+                    "minimum": 1,
+                    "example": 1
+                },
+                "page": {
+                    "description": "Page 页码，从 1 开始，默认 1",
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "page_size": {
+                    "description": "PageSize 每页数量，默认 20，最大 50",
+                    "type": "integer",
+                    "maximum": 50,
+                    "minimum": 1,
+                    "example": 20
+                },
+                "year": {
+                    "description": "Year 按年份过滤，不传则返回全部",
+                    "type": "integer",
+                    "example": 2024
+                }
+            }
+        },
+        "service.RecordListResult": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "List 记录列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Record"
+                    }
+                },
+                "page": {
+                    "description": "Page 当前页码",
+                    "type": "integer"
+                },
+                "page_size": {
+                    "description": "PageSize 每页数量",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "Total 总记录数",
+                    "type": "integer"
                 }
             }
         },
@@ -910,6 +1637,53 @@ const docTemplate = `{
                     "maxLength": 20,
                     "minLength": 2,
                     "example": "小红"
+                }
+            }
+        },
+        "service.UpdateRecordInput": {
+            "type": "object",
+            "properties": {
+                "duration_mins": {
+                    "description": "DurationMins 修改时长",
+                    "type": "integer",
+                    "example": 45
+                },
+                "happened_at": {
+                    "description": "HappenedAt 修改发生时间",
+                    "type": "string",
+                    "example": "2024-01-15T21:00:00Z"
+                },
+                "mood": {
+                    "description": "Mood 修改心情评分",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1,
+                    "example": 3
+                },
+                "note_encrypted": {
+                    "description": "NoteEncrypted 修改备注密文",
+                    "type": "string"
+                },
+                "position_ids": {
+                    "description": "PositionIDs 重新设置姿势列表（全量替换）",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "satisfaction": {
+                    "description": "Satisfaction 修改满意度评分",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1,
+                    "example": 4
+                },
+                "tag_ids": {
+                    "description": "TagIDs 重新设置标签列表（全量替换）",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }

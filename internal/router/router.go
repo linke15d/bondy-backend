@@ -17,6 +17,7 @@ func Setup(
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
 	coupleHandler *handler.CoupleHandler,
+	recordHandler *handler.RecordHandler,
 ) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -52,6 +53,18 @@ func Setup(
 			couple.POST("/bind", coupleHandler.BindPartner)          // 绑定伴侣
 			couple.POST("/info", coupleHandler.GetCoupleInfo)        // 获取伴侣信息
 			couple.POST("/unbind", coupleHandler.Unlink)             // 解除绑定
+		}
+
+		// 亲密记录
+		records := protected.Group("/records")
+		{
+			records.POST("/create", recordHandler.CreateRecord)    // 创建记录
+			records.POST("/list", recordHandler.ListRecords)       // 获取列表
+			records.POST("/detail", recordHandler.GetRecord)       // 获取详情
+			records.POST("/update", recordHandler.UpdateRecord)    // 更新记录
+			records.POST("/delete", recordHandler.DeleteRecord)    // 删除记录
+			records.POST("/tags", recordHandler.GetTags)           // 获取标签列表
+			records.POST("/positions", recordHandler.GetPositions) // 获取姿势列表
 		}
 	}
 }
