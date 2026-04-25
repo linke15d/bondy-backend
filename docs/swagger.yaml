@@ -1,0 +1,283 @@
+basePath: /
+definitions:
+  handler.RefreshTokenInput:
+    properties:
+      refresh_token:
+        description: RefreshToken 登录时获得的长期刷新令牌
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  model.User:
+    properties:
+      avatar_url:
+        description: AvatarURL 用户头像图片地址
+        example: https://cdn.example.com/avatar.jpg
+        type: string
+      birthday:
+        description: Birthday 用户生日，用于计算星座、年龄等
+        example: "1995-06-15T00:00:00Z"
+        type: string
+      created_at:
+        description: CreatedAt 账号创建时间，由数据库自动填充
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      email:
+        description: Email 用户邮箱，唯一，可用于登录，注册时必填
+        example: user@example.com
+        type: string
+      id:
+        description: ID 用户唯一标识，UUID 格式，由数据库自动生成
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_blocked:
+        description: IsBlocked 账号是否被管理员封禁，封禁后无法登录
+        example: false
+        type: boolean
+      is_verified:
+        description: IsVerified 邮箱或手机号是否已通过验证
+        example: false
+        type: boolean
+      nickname:
+        description: Nickname 用户昵称，显示在界面上的名称
+        example: 小明
+        type: string
+      phone:
+        description: Phone 用户手机号，唯一，可用于登录，可选
+        example: "+8613800138000"
+        type: string
+      updated_at:
+        description: UpdatedAt 账号最后更新时间，由数据库自动维护
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  response.Response:
+    properties:
+      code:
+        description: Code 业务状态码，0 表示成功，其他值表示错误
+        example: 0
+        type: integer
+      data:
+        description: Data 响应数据，失败时为 null
+      message:
+        description: Message 提示信息
+        example: success
+        type: string
+    type: object
+  service.AuthResult:
+    properties:
+      access_token:
+        description: |-
+          AccessToken 短期访问令牌，有效期15分钟
+          调用需要登录的接口时放在 Header: Authorization: Bearer <access_token>
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refresh_token:
+        description: |-
+          RefreshToken 长期刷新令牌，有效期30天
+          Access Token 过期后，用此 token 换取新的 token 对
+          请安全存储，不要暴露
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/model.User'
+        description: User 当前登录的用户信息
+    type: object
+  service.LoginInput:
+    properties:
+      email:
+        description: Email 登录邮箱
+        example: user@example.com
+        type: string
+      password:
+        description: Password 登录密码
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  service.RegisterInput:
+    properties:
+      email:
+        description: Email 注册邮箱，必须是合法的邮箱格式，注册后作为登录账号
+        example: user@example.com
+        type: string
+      nickname:
+        description: Nickname 用户昵称，显示在 App 界面，2到20个字符
+        example: 小明
+        maxLength: 20
+        minLength: 2
+        type: string
+      password:
+        description: Password 登录密码，最少8位，建议包含字母和数字
+        example: password123
+        minLength: 8
+        type: string
+    required:
+    - email
+    - nickname
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: 'Bondy 伴侣亲密记录 App 后端接口文档。调用需要登录的接口时，在 Header 中加入 Authorization: Bearer
+    <access_token>'
+  title: Bondy API
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 使用邮箱和密码登录。返回 access_token（有效期15分钟）和 refresh_token（有效期30天）。access_token
+        用于调用其他接口，refresh_token 用于在 access_token 过期后换取新令牌。
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.AuthResult'
+              type: object
+        "400":
+          description: 参数格式错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 邮箱或密码错误 或 账号已被封禁
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 用户登录
+      tags:
+      - 认证
+  /api/v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: 使当前 refresh_token 永久失效。登出后 access_token 仍在有效期内可使用（最多15分钟），客户端应同时清除本地存储的所有
+        token。
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 要失效的 Refresh Token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RefreshTokenInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登出成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 参数格式错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录或 token 已过期
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 用户登出
+      tags:
+      - 认证
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: 当 access_token 过期时，使用 refresh_token 换取新的 token 对。采用 Rotation 策略，每次调用后旧的
+        refresh_token 立即失效，请使用新返回的 refresh_token 替换本地存储。
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RefreshTokenInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 刷新成功，返回新的 token 对
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.AuthResult'
+              type: object
+        "400":
+          description: 参数格式错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: refresh_token 无效、已过期或已被使用
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 刷新 Access Token
+      tags:
+      - 认证
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 使用邮箱和密码创建新账号。注册成功后直接返回 token 对，无需再次调用登录接口。
+      parameters:
+      - description: 注册信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 注册成功，返回 token 对和用户信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.AuthResult'
+              type: object
+        "400":
+          description: 参数格式错误 或 邮箱已被注册
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 用户注册
+      tags:
+      - 认证
+securityDefinitions:
+  BearerAuth:
+    description: 登录后将 access_token 填入此处，格式：Bearer <token>
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
