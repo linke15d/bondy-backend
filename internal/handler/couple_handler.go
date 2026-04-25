@@ -27,7 +27,7 @@ type BindInput struct {
 //
 //	@Summary		生成邀请码
 //	@Description	生成一个6位邀请码，有效期15分钟。将邀请码分享给伴侣，对方通过邀请码完成绑定。如果已有未使用的邀请码，调用此接口会刷新邀请码并重置有效期。
-//	@Tags			伴侣
+//	@Tags			伴侣配对
 //	@Produce		json
 //	@Param			Authorization	header		string											true	"Bearer {access_token}"
 //	@Success		200				{object}	response.Response{data=service.InviteCodeResult}	"邀请码信息"
@@ -51,7 +51,7 @@ func (h *CoupleHandler) GenerateInviteCode(c *gin.Context) {
 //
 //	@Summary		绑定伴侣
 //	@Description	输入对方生成的邀请码完成伴侣绑定。绑定成功后，双方可以共享亲密记录、心愿清单等数据。每个用户同时只能有一段有效的伴侣关系。
-//	@Tags			伴侣
+//	@Tags			伴侣配对
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string										true	"Bearer {access_token}"
@@ -83,7 +83,7 @@ func (h *CoupleHandler) BindPartner(c *gin.Context) {
 //
 //	@Summary		获取伴侣信息
 //	@Description	获取当前用户的伴侣关系信息，包括对方的用户资料和绑定时间
-//	@Tags			伴侣
+//	@Tags			伴侣配对
 //	@Produce		json
 //	@Param			Authorization	header		string									true	"Bearer {access_token}"
 //	@Success		200				{object}	response.Response{data=service.CoupleInfo}	"伴侣信息"
@@ -107,7 +107,7 @@ func (h *CoupleHandler) GetCoupleInfo(c *gin.Context) {
 //
 //	@Summary		解除伴侣关系
 //	@Description	解除与当前伴侣的绑定关系。解除后历史记录仍然保留，但不再共享新数据。此操作不可撤销。
-//	@Tags			伴侣
+//	@Tags			伴侣配对
 //	@Produce		json
 //	@Param			Authorization	header		string				true	"Bearer {access_token}"
 //	@Success		200				{object}	response.Response	"解除成功"

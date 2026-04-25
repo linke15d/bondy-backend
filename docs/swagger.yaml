@@ -748,7 +748,7 @@ paths:
       - BearerAuth: []
       summary: 创建记录
       tags:
-      - 记录
+      - 亲密记录
   /api/v1/records/delete:
     post:
       consumes:
@@ -785,7 +785,7 @@ paths:
       - BearerAuth: []
       summary: 删除记录
       tags:
-      - 记录
+      - 亲密记录
   /api/v1/records/detail:
     post:
       consumes:
@@ -831,7 +831,7 @@ paths:
       - BearerAuth: []
       summary: 获取记录详情
       tags:
-      - 记录
+      - 亲密记录
   /api/v1/records/list:
     post:
       consumes:
@@ -873,7 +873,7 @@ paths:
       - BearerAuth: []
       summary: 获取记录列表
       tags:
-      - 记录
+      - 亲密记录
   /api/v1/records/positions:
     post:
       description: 获取可用的姿势列表，包括系统预设姿势和当前伴侣自定义姿势
@@ -905,7 +905,7 @@ paths:
       - BearerAuth: []
       summary: 获取姿势列表
       tags:
-      - 记录
+      - 亲密记录
   /api/v1/records/tags:
     post:
       consumes:
@@ -946,7 +946,7 @@ paths:
       - BearerAuth: []
       summary: 获取标签列表
       tags:
-      - 记录
+      - 亲密记录
   /api/v1/records/update:
     post:
       consumes:
@@ -988,7 +988,7 @@ paths:
       - BearerAuth: []
       summary: 更新记录
       tags:
-      - 记录
+      - 亲密记录
   /api/v1/user/password/change:
     post:
       consumes:

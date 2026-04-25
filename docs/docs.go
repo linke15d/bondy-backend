@@ -494,7 +494,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "记录"
+                    "亲密记录"
                 ],
                 "summary": "创建记录",
                 "parameters": [
@@ -564,7 +564,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "记录"
+                    "亲密记录"
                 ],
                 "summary": "删除记录",
                 "parameters": [
@@ -622,7 +622,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "记录"
+                    "亲密记录"
                 ],
                 "summary": "获取记录详情",
                 "parameters": [
@@ -698,7 +698,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "记录"
+                    "亲密记录"
                 ],
                 "summary": "获取记录列表",
                 "parameters": [
@@ -765,7 +765,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "记录"
+                    "亲密记录"
                 ],
                 "summary": "获取姿势列表",
                 "parameters": [
@@ -823,7 +823,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "记录"
+                    "亲密记录"
                 ],
                 "summary": "获取标签列表",
                 "parameters": [
@@ -890,7 +890,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "记录"
+                    "亲密记录"
                 ],
                 "summary": "更新记录",
                 "parameters": [
