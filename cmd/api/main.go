@@ -41,16 +41,19 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	coupleRepo := repository.NewCoupleRepository(db)
 	recordRepo := repository.NewRecordRepository(db)
+	statsRepo := repository.NewStatsRepository(db)
 
 	authService := service.NewAuthService(userRepo, jwtManager)
 	userService := service.NewUserService(userRepo)
 	coupleService := service.NewCoupleService(coupleRepo, userRepo)
 	recordService := service.NewRecordService(recordRepo, coupleRepo)
+	statsService := service.NewStatsService(statsRepo, coupleRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
 	coupleHandler := handler.NewCoupleHandler(coupleService)
 	recordHandler := handler.NewRecordHandler(recordService)
+	statsHandler := handler.NewStatsHandler(statsService)
 
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -60,7 +63,7 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "env": cfg.App.Env})
 	})
-	router.Setup(r, jwtManager, authHandler, userHandler, coupleHandler, recordHandler)
+	router.Setup(r, jwtManager, authHandler, userHandler, coupleHandler, recordHandler, statsHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.App.Port)
 	log.Printf("服务启动，监听端口 %s", addr)

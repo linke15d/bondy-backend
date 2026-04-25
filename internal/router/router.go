@@ -18,6 +18,7 @@ func Setup(
 	userHandler *handler.UserHandler,
 	coupleHandler *handler.CoupleHandler,
 	recordHandler *handler.RecordHandler,
+	statsHandler *handler.StatsHandler,
 ) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -65,6 +66,14 @@ func Setup(
 			records.POST("/delete", recordHandler.DeleteRecord)    // 删除记录
 			records.POST("/tags", recordHandler.GetTags)           // 获取标签列表
 			records.POST("/positions", recordHandler.GetPositions) // 获取姿势列表
+		}
+
+		// 数据统计
+		stats := protected.Group("/stats")
+		{
+			stats.POST("/overview", statsHandler.GetOverview)    // 总览统计
+			stats.POST("/yearly", statsHandler.GetYearlyStats)   // 年度统计
+			stats.POST("/monthly", statsHandler.GetMonthlyStats) // 月度统计
 		}
 	}
 }
