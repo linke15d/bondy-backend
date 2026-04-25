@@ -381,7 +381,7 @@ paths:
       tags:
       - 伴侣
   /api/v1/couple/info:
-    get:
+    post:
       description: 获取当前用户的伴侣关系信息，包括对方的用户资料和绑定时间
       parameters:
       - description: Bearer {access_token}
@@ -449,8 +449,8 @@ paths:
       tags:
       - 伴侣
   /api/v1/couple/unbind:
-    delete:
-      description: 解除与当前伴侣的绑定关系。解除后双方各自的历史记录仍然保留，但不再共享新数据。此操作不可撤销，请谨慎操作。
+    post:
+      description: 解除与当前伴侣的绑定关系。解除后历史记录仍然保留，但不再共享新数据。此操作不可撤销。
       parameters:
       - description: Bearer {access_token}
         in: header
@@ -477,11 +477,11 @@ paths:
       summary: 解除伴侣关系
       tags:
       - 伴侣
-  /api/v1/user/password:
-    put:
+  /api/v1/user/password/change:
+    post:
       consumes:
       - application/json
-      description: 修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备的 token 将失效，需要重新登录
+      description: 修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备强制下线
       parameters:
       - description: Bearer {access_token}
         in: header
@@ -514,8 +514,8 @@ paths:
       summary: 修改密码
       tags:
       - 用户
-  /api/v1/user/profile:
-    get:
+  /api/v1/user/profile/get:
+    post:
       description: 获取当前登录用户的详细信息，包括昵称、头像、生日等
       parameters:
       - description: Bearer {access_token}
@@ -548,10 +548,11 @@ paths:
       summary: 获取个人信息
       tags:
       - 用户
-    put:
+  /api/v1/user/profile/update:
+    post:
       consumes:
       - application/json
-      description: 更新当前登录用户的昵称、头像、生日等基本信息，只传需要修改的字段即可
+      description: 更新当前登录用户的昵称、头像、生日等，只传需要修改的字段
       parameters:
       - description: Bearer {access_token}
         in: header

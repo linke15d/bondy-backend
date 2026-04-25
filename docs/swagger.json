@@ -312,7 +312,7 @@
             }
         },
         "/api/v1/couple/info": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -428,13 +428,13 @@
             }
         },
         "/api/v1/couple/unbind": {
-            "delete": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "解除与当前伴侣的绑定关系。解除后双方各自的历史记录仍然保留，但不再共享新数据。此操作不可撤销，请谨慎操作。",
+                "description": "解除与当前伴侣的绑定关系。解除后历史记录仍然保留，但不再共享新数据。此操作不可撤销。",
                 "produces": [
                     "application/json"
                 ],
@@ -473,14 +473,14 @@
                 }
             }
         },
-        "/api/v1/user/password": {
-            "put": {
+        "/api/v1/user/password/change": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备的 token 将失效，需要重新登录",
+                "description": "修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备强制下线",
                 "consumes": [
                     "application/json"
                 ],
@@ -531,8 +531,8 @@
                 }
             }
         },
-        "/api/v1/user/profile": {
-            "get": {
+        "/api/v1/user/profile/get": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -587,14 +587,16 @@
                         }
                     }
                 }
-            },
-            "put": {
+            }
+        },
+        "/api/v1/user/profile/update": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "更新当前登录用户的昵称、头像、生日等基本信息，只传需要修改的字段即可",
+                "description": "更新当前登录用户的昵称、头像、生日等，只传需要修改的字段",
                 "consumes": [
                     "application/json"
                 ],

@@ -23,12 +23,12 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 //	@Description	获取当前登录用户的详细信息，包括昵称、头像、生日等
 //	@Tags			用户
 //	@Produce		json
-//	@Param			Authorization	header		string	true	"Bearer {access_token}"
-//	@Success		200				{object}	response.Response{data=model.User}	"用户信息"
-//	@Failure		401				{object}	response.Response					"未登录或 token 已过期"
-//	@Failure		404				{object}	response.Response					"用户不存在"
+//	@Param			Authorization	header		string									true	"Bearer {access_token}"
+//	@Success		200				{object}	response.Response{data=model.User}		"用户信息"
+//	@Failure		401				{object}	response.Response						"未登录或 token 已过期"
+//	@Failure		404				{object}	response.Response						"用户不存在"
 //	@Security		BearerAuth
-//	@Router			/api/v1/user/profile [get]
+//	@Router			/api/v1/user/profile/get [post]
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	// 从 JWT 中间件注入的 context 中获取当前用户 ID
 	userID := c.GetString("userID")
@@ -45,17 +45,17 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 // UpdateProfile 更新个人信息
 //
 //	@Summary		更新个人信息
-//	@Description	更新当前登录用户的昵称、头像、生日等基本信息，只传需要修改的字段即可
+//	@Description	更新当前登录用户的昵称、头像、生日等，只传需要修改的字段
 //	@Tags			用户
 //	@Accept			json
 //	@Produce		json
-//	@Param			Authorization	header		string								true	"Bearer {access_token}"
-//	@Param			body			body		service.UpdateProfileInput			true	"要更新的字段"
-//	@Success		200				{object}	response.Response{data=model.User}	"更新后的用户信息"
-//	@Failure		400				{object}	response.Response					"参数格式错误"
-//	@Failure		401				{object}	response.Response					"未登录或 token 已过期"
+//	@Param			Authorization	header		string									true	"Bearer {access_token}"
+//	@Param			body			body		service.UpdateProfileInput				true	"要更新的字段"
+//	@Success		200				{object}	response.Response{data=model.User}		"更新后的用户信息"
+//	@Failure		400				{object}	response.Response						"参数格式错误"
+//	@Failure		401				{object}	response.Response						"未登录或 token 已过期"
 //	@Security		BearerAuth
-//	@Router			/api/v1/user/profile [put]
+//	@Router			/api/v1/user/profile/update [post]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID := c.GetString("userID")
 
@@ -77,7 +77,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 // ChangePassword 修改密码
 //
 //	@Summary		修改密码
-//	@Description	修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备的 token 将失效，需要重新登录
+//	@Description	修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备强制下线
 //	@Tags			用户
 //	@Accept			json
 //	@Produce		json
@@ -87,7 +87,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 //	@Failure		400				{object}	response.Response			"参数错误或旧密码不正确"
 //	@Failure		401				{object}	response.Response			"未登录或 token 已过期"
 //	@Security		BearerAuth
-//	@Router			/api/v1/user/password [put]
+//	@Router			/api/v1/user/password/change [post]
 func (h *UserHandler) ChangePassword(c *gin.Context) {
 	userID := c.GetString("userID")
 

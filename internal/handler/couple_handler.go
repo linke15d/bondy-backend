@@ -85,12 +85,12 @@ func (h *CoupleHandler) BindPartner(c *gin.Context) {
 //	@Description	获取当前用户的伴侣关系信息，包括对方的用户资料和绑定时间
 //	@Tags			伴侣
 //	@Produce		json
-//	@Param			Authorization	header		string										true	"Bearer {access_token}"
+//	@Param			Authorization	header		string									true	"Bearer {access_token}"
 //	@Success		200				{object}	response.Response{data=service.CoupleInfo}	"伴侣信息"
-//	@Failure		401				{object}	response.Response							"未登录"
-//	@Failure		404				{object}	response.Response							"暂无伴侣关系"
+//	@Failure		401				{object}	response.Response						"未登录"
+//	@Failure		404				{object}	response.Response						"暂无伴侣关系"
 //	@Security		BearerAuth
-//	@Router			/api/v1/couple/info [get]
+//	@Router			/api/v1/couple/info [post]
 func (h *CoupleHandler) GetCoupleInfo(c *gin.Context) {
 	userID := c.GetString("userID")
 
@@ -106,7 +106,7 @@ func (h *CoupleHandler) GetCoupleInfo(c *gin.Context) {
 // Unlink 解除伴侣关系
 //
 //	@Summary		解除伴侣关系
-//	@Description	解除与当前伴侣的绑定关系。解除后双方各自的历史记录仍然保留，但不再共享新数据。此操作不可撤销，请谨慎操作。
+//	@Description	解除与当前伴侣的绑定关系。解除后历史记录仍然保留，但不再共享新数据。此操作不可撤销。
 //	@Tags			伴侣
 //	@Produce		json
 //	@Param			Authorization	header		string				true	"Bearer {access_token}"
@@ -114,7 +114,7 @@ func (h *CoupleHandler) GetCoupleInfo(c *gin.Context) {
 //	@Failure		400				{object}	response.Response	"暂无伴侣关系"
 //	@Failure		401				{object}	response.Response	"未登录"
 //	@Security		BearerAuth
-//	@Router			/api/v1/couple/unbind [delete]
+//	@Router			/api/v1/couple/unbind [post]
 func (h *CoupleHandler) Unlink(c *gin.Context) {
 	userID := c.GetString("userID")
 
