@@ -1,4 +1,3 @@
-// Package router 路由注册与分组管理
 package router
 
 import (
@@ -12,13 +11,17 @@ import (
 )
 
 // Setup 注册所有路由和中间件
-func Setup(r *gin.Engine, jwtManager *jwtpkg.Manager, authHandler *handler.AuthHandler) {
-	// Swagger 文档（开发环境访问 /swagger/index.html）
+func Setup(
+	r *gin.Engine,
+	jwtManager *jwtpkg.Manager,
+	authHandler *handler.AuthHandler,
+	userHandler *handler.UserHandler,
+) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	v1 := r.Group("/api/v1")
 
-	// 无需登录的路由
+	// ── 无需登录 ──
 	auth := v1.Group("/auth")
 	{
 		auth.POST("/register", authHandler.Register)
@@ -26,10 +29,19 @@ func Setup(r *gin.Engine, jwtManager *jwtpkg.Manager, authHandler *handler.AuthH
 		auth.POST("/refresh", authHandler.RefreshToken)
 	}
 
-	// 需要登录的路由
+	// ── 需要登录 ──
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware(jwtManager))
 	{
+		// 认证
 		protected.POST("/auth/logout", authHandler.Logout)
+
+		// 用户信息
+		user := protected.Group("/user")
+		{
+			user.GET("/profile", userHandler.GetProfile)      // 获取个人信息
+			user.PUT("/profile", userHandler.UpdateProfile)   // 更新个人信息
+			user.PUT("/password", userHandler.ChangePassword) // 修改密码
+		}
 	}
 }

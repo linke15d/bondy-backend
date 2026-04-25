@@ -246,6 +246,190 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/user/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备的 token 将失效，需要重新登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "修改密码",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "旧密码和新密码",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.ChangePasswordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "修改成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或旧密码不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前登录用户的详细信息，包括昵称、头像、生日等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "获取个人信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新当前登录用户的昵称、头像、生日等基本信息，只传需要修改的字段即可",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "更新个人信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {access_token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "要更新的字段",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateProfileInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新后的用户信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -358,6 +542,26 @@ const docTemplate = `{
                 }
             }
         },
+        "service.ChangePasswordInput": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "new_password": {
+                    "description": "NewPassword 新密码，最少8位",
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "newpassword456"
+                },
+                "old_password": {
+                    "description": "OldPassword 当前使用的旧密码，用于验证身份",
+                    "type": "string",
+                    "example": "oldpassword123"
+                }
+            }
+        },
         "service.LoginInput": {
             "type": "object",
             "required": [
@@ -402,6 +606,28 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 8,
                     "example": "password123"
+                }
+            }
+        },
+        "service.UpdateProfileInput": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "description": "AvatarURL 头像图片地址，需要先通过上传接口获得 URL 再传入",
+                    "type": "string",
+                    "example": "https://cdn.example.com/avatar.jpg"
+                },
+                "birthday": {
+                    "description": "Birthday 生日，格式 RFC3339",
+                    "type": "string",
+                    "example": "1995-06-15T00:00:00Z"
+                },
+                "nickname": {
+                    "description": "Nickname 昵称，2到20个字符",
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 2,
+                    "example": "小红"
                 }
             }
         }

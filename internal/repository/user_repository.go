@@ -85,3 +85,9 @@ func (r *UserRepository) DeleteRefreshToken(token string) error {
 func (r *UserRepository) DeleteAllUserRefreshTokens(userID string) error {
 	return r.db.Where("user_id = ?", userID).Delete(&model.RefreshToken{}).Error
 }
+
+// Update 更新用户信息
+// 只更新模型中非零值字段（使用 Save 全量更新）
+func (r *UserRepository) Update(user *model.User) error {
+	return r.db.Save(user).Error
+}

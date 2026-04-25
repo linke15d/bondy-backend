@@ -85,6 +85,21 @@ definitions:
         - $ref: '#/definitions/model.User'
         description: User 当前登录的用户信息
     type: object
+  service.ChangePasswordInput:
+    properties:
+      new_password:
+        description: NewPassword 新密码，最少8位
+        example: newpassword456
+        minLength: 8
+        type: string
+      old_password:
+        description: OldPassword 当前使用的旧密码，用于验证身份
+        example: oldpassword123
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
   service.LoginInput:
     properties:
       email:
@@ -120,6 +135,23 @@ definitions:
     - email
     - nickname
     - password
+    type: object
+  service.UpdateProfileInput:
+    properties:
+      avatar_url:
+        description: AvatarURL 头像图片地址，需要先通过上传接口获得 URL 再传入
+        example: https://cdn.example.com/avatar.jpg
+        type: string
+      birthday:
+        description: Birthday 生日，格式 RFC3339
+        example: "1995-06-15T00:00:00Z"
+        type: string
+      nickname:
+        description: Nickname 昵称，2到20个字符
+        example: 小红
+        maxLength: 20
+        minLength: 2
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -274,6 +306,118 @@ paths:
       summary: 用户注册
       tags:
       - 认证
+  /api/v1/user/password:
+    put:
+      consumes:
+      - application/json
+      description: 修改当前登录用户的密码，需要提供旧密码验证身份。修改成功后所有设备的 token 将失效，需要重新登录
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 旧密码和新密码
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.ChangePasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 参数错误或旧密码不正确
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录或 token 已过期
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 修改密码
+      tags:
+      - 用户
+  /api/v1/user/profile:
+    get:
+      description: 获取当前登录用户的详细信息，包括昵称、头像、生日等
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "401":
+          description: 未登录或 token 已过期
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取个人信息
+      tags:
+      - 用户
+    put:
+      consumes:
+      - application/json
+      description: 更新当前登录用户的昵称、头像、生日等基本信息，只传需要修改的字段即可
+      parameters:
+      - description: Bearer {access_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 要更新的字段
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateProfileInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新后的用户信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: 参数格式错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未登录或 token 已过期
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新个人信息
+      tags:
+      - 用户
 securityDefinitions:
   BearerAuth:
     description: 登录后将 access_token 填入此处，格式：Bearer <token>

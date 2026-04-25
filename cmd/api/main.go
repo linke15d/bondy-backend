@@ -39,8 +39,12 @@ func main() {
 	)
 
 	userRepo := repository.NewUserRepository(db)
+
 	authService := service.NewAuthService(userRepo, jwtManager)
+	userService := service.NewUserService(userRepo)
+
 	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userService)
 
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -50,7 +54,7 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "env": cfg.App.Env})
 	})
-	router.Setup(r, jwtManager, authHandler)
+	router.Setup(r, jwtManager, authHandler, userHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.App.Port)
 	log.Printf("服务启动，监听端口 %s", addr)
