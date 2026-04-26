@@ -60,6 +60,10 @@ func main() {
 	wishlistService := service.NewWishlistService(wishlistRepo, coupleRepo)
 	wishlistHandler := handler.NewWishlistHandler(wishlistService)
 
+	healthRepo := repository.NewHealthRepository(db)
+	healthService := service.NewHealthService(healthRepo)
+	healthHandler := handler.NewHealthHandler(healthService)
+
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -68,7 +72,8 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "env": cfg.App.Env})
 	})
-	router.Setup(r, jwtManager, authHandler, userHandler, coupleHandler, recordHandler, statsHandler, wishlistHandler)
+	router.Setup(r, jwtManager, authHandler, userHandler, coupleHandler, recordHandler,
+		statsHandler, wishlistHandler, healthHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.App.Port)
 	log.Printf("服务启动，监听端口 %s", addr)

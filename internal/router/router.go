@@ -20,6 +20,7 @@ func Setup(
 	recordHandler *handler.RecordHandler,
 	statsHandler *handler.StatsHandler,
 	wishlistHandler *handler.WishlistHandler,
+	healthHandler *handler.HealthHandler,
 ) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -87,6 +88,17 @@ func Setup(
 			wishlist.POST("/delete", wishlistHandler.DeleteWishlist) // 删除心愿
 			wishlist.POST("/like", wishlistHandler.LikeWishlist)     // 点赞
 			wishlist.POST("/complete", wishlistHandler.SetCompleted) // 标记完成
+		}
+
+		// 健康记录
+		health := protected.Group("/health")
+		{
+			health.POST("/create", healthHandler.CreateHealthRecord)      // 创建记录
+			health.POST("/list", healthHandler.ListHealthRecords)         // 获取列表
+			health.POST("/detail", healthHandler.GetHealthRecord)         // 获取详情
+			health.POST("/update", healthHandler.UpdateHealthRecord)      // 更新记录
+			health.POST("/delete", healthHandler.DeleteHealthRecord)      // 删除记录
+			health.POST("/reminder/cancel", healthHandler.CancelReminder) // 取消提醒
 		}
 	}
 }

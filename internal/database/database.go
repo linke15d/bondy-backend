@@ -36,6 +36,7 @@ func Init(cfg *config.DBConfig) *gorm.DB {
 		&model.Position{},
 		&model.Record{},
 		&model.Wishlist{},
+		&model.HealthRecord{},
 	); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}
