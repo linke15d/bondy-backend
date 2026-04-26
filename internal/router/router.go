@@ -21,6 +21,7 @@ func Setup(
 	statsHandler *handler.StatsHandler,
 	wishlistHandler *handler.WishlistHandler,
 	healthHandler *handler.HealthHandler,
+	subHandler *handler.SubscriptionHandler,
 ) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -99,6 +100,14 @@ func Setup(
 			health.POST("/update", healthHandler.UpdateHealthRecord)      // 更新记录
 			health.POST("/delete", healthHandler.DeleteHealthRecord)      // 删除记录
 			health.POST("/reminder/cancel", healthHandler.CancelReminder) // 取消提醒
+		}
+
+		// 订阅会员
+		sub := protected.Group("/subscription")
+		{
+			sub.POST("/status", subHandler.GetStatus)  // 获取会员状态
+			sub.POST("/purchase", subHandler.Purchase) // 购买会员
+			sub.POST("/cancel", subHandler.Cancel)     // 取消订阅
 		}
 	}
 }

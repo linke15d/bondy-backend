@@ -64,6 +64,10 @@ func main() {
 	healthService := service.NewHealthService(healthRepo)
 	healthHandler := handler.NewHealthHandler(healthService)
 
+	subRepo := repository.NewSubscriptionRepository(db)
+	subService := service.NewSubscriptionService(subRepo, userRepo)
+	subHandler := handler.NewSubscriptionHandler(subService)
+
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -73,7 +77,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok", "env": cfg.App.Env})
 	})
 	router.Setup(r, jwtManager, authHandler, userHandler, coupleHandler, recordHandler,
-		statsHandler, wishlistHandler, healthHandler)
+		statsHandler, wishlistHandler, healthHandler, subHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.App.Port)
 	log.Printf("服务启动，监听端口 %s", addr)
