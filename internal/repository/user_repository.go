@@ -91,3 +91,29 @@ func (r *UserRepository) DeleteAllUserRefreshTokens(userID string) error {
 func (r *UserRepository) Update(user *model.User) error {
 	return r.db.Save(user).Error
 }
+
+// AdminList 管理端获取用户列表，支持关键词搜索和封禁状态过滤
+func (r *UserRepository) AdminList(keyword string, isBlocked *bool, page, pageSize int) ([]model.User, int64, error) {
+	var users []model.User
+	var total int64
+
+	query := r.db.Model(&model.User{}).Where("deleted_at IS NULL")
+
+	if keyword != "" {
+		query = query.Where("email LIKE ? OR nickname LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	if isBlocked != nil {
+		query = query.Where("is_blocked = ?", *isBlocked)
+	}
+
+	query.Count(&total)
+
+	offset := (page - 1) * pageSize
+	err := query.Order("created_at DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&users).Error
+
+	return users, total, err
+}

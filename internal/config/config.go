@@ -2,20 +2,22 @@ package config
 
 import (
 	"log"
+
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	App      AppConfig
-	DB       DBConfig
-	Redis    RedisConfig
-	JWT      JWTConfig
+	App   AppConfig
+	DB    DBConfig
+	Redis RedisConfig
+	JWT   JWTConfig
 }
 
 type AppConfig struct {
-	Env  string
-	Port string
+	Env       string
+	Port      string
+	AdminPort string
 }
 
 type DBConfig struct {
@@ -50,8 +52,9 @@ func Load() *Config {
 
 	return &Config{
 		App: AppConfig{
-			Env:  viper.GetString("APP_ENV"),
-			Port: viper.GetString("APP_PORT"),
+			Env:       viper.GetString("APP_ENV"),
+			Port:      viper.GetString("APP_PORT"),
+			AdminPort: viper.GetString("ADMIN_PORT"),
 		},
 		DB: DBConfig{
 			Host:     viper.GetString("DB_HOST"),
