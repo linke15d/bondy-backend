@@ -39,21 +39,26 @@ func main() {
 	)
 
 	userRepo := repository.NewUserRepository(db)
-	coupleRepo := repository.NewCoupleRepository(db)
-	recordRepo := repository.NewRecordRepository(db)
-	statsRepo := repository.NewStatsRepository(db)
-
 	authService := service.NewAuthService(userRepo, jwtManager)
 	userService := service.NewUserService(userRepo)
-	coupleService := service.NewCoupleService(coupleRepo, userRepo)
-	recordService := service.NewRecordService(recordRepo, coupleRepo)
-	statsService := service.NewStatsService(statsRepo, coupleRepo)
-
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
+
+	coupleRepo := repository.NewCoupleRepository(db)
+	coupleService := service.NewCoupleService(coupleRepo, userRepo)
 	coupleHandler := handler.NewCoupleHandler(coupleService)
+
+	recordRepo := repository.NewRecordRepository(db)
+	recordService := service.NewRecordService(recordRepo, coupleRepo)
 	recordHandler := handler.NewRecordHandler(recordService)
+
+	statsRepo := repository.NewStatsRepository(db)
+	statsService := service.NewStatsService(statsRepo, coupleRepo)
 	statsHandler := handler.NewStatsHandler(statsService)
+
+	wishlistRepo := repository.NewWishlistRepository(db)
+	wishlistService := service.NewWishlistService(wishlistRepo, coupleRepo)
+	wishlistHandler := handler.NewWishlistHandler(wishlistService)
 
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -63,7 +68,7 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "env": cfg.App.Env})
 	})
-	router.Setup(r, jwtManager, authHandler, userHandler, coupleHandler, recordHandler, statsHandler)
+	router.Setup(r, jwtManager, authHandler, userHandler, coupleHandler, recordHandler, statsHandler, wishlistHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.App.Port)
 	log.Printf("服务启动，监听端口 %s", addr)

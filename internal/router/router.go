@@ -19,6 +19,7 @@ func Setup(
 	coupleHandler *handler.CoupleHandler,
 	recordHandler *handler.RecordHandler,
 	statsHandler *handler.StatsHandler,
+	wishlistHandler *handler.WishlistHandler,
 ) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -74,6 +75,18 @@ func Setup(
 			stats.POST("/overview", statsHandler.GetOverview)    // 总览统计
 			stats.POST("/yearly", statsHandler.GetYearlyStats)   // 年度统计
 			stats.POST("/monthly", statsHandler.GetMonthlyStats) // 月度统计
+		}
+
+		// 心愿清单
+		wishlist := protected.Group("/wishlist")
+		{
+			wishlist.POST("/create", wishlistHandler.CreateWishlist) // 创建心愿
+			wishlist.POST("/list", wishlistHandler.ListWishlists)    // 获取列表
+			wishlist.POST("/detail", wishlistHandler.GetWishlist)    // 获取详情
+			wishlist.POST("/update", wishlistHandler.UpdateWishlist) // 更新心愿
+			wishlist.POST("/delete", wishlistHandler.DeleteWishlist) // 删除心愿
+			wishlist.POST("/like", wishlistHandler.LikeWishlist)     // 点赞
+			wishlist.POST("/complete", wishlistHandler.SetCompleted) // 标记完成
 		}
 	}
 }
