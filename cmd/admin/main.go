@@ -15,7 +15,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 
 	_ "github.com/linke15d/bondy-backend/docs/admin"
 	"github.com/linke15d/bondy-backend/internal/config"
@@ -45,8 +47,14 @@ func main() {
 	subRepo := repository.NewSubscriptionRepository(db)
 	adminRepo := repository.NewAdminRepository(db)
 
+	// 初始化 Redis
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
+		Password: cfg.Redis.Password,
+	})
+
 	// 初始化 admin service
-	adminAuthService := adminService.NewAdminAuthService(adminRepo, jwtManager)
+	adminAuthService := adminService.NewAdminAuthService(adminRepo, jwtManager, rdb)
 	adminUserService := adminService.NewAdminUserService(userRepo, coupleRepo)
 	adminRecordService := adminService.NewAdminRecordService(recordRepo)
 	adminSubService := adminService.NewAdminSubService(subRepo)
@@ -66,6 +74,13 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // 开发环境先放开，生产环境改成具体域名
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "admin"})
 	})
