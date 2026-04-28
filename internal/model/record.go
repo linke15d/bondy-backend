@@ -1,7 +1,11 @@
 // Package model 数据库模型定义
 package model
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // Record 亲密记录表
 // 每条记录代表一次亲密行为，由伴侣中的任意一方创建
@@ -94,6 +98,9 @@ type Position struct {
 	// Category 姿势分类：CLASSIC（经典）、ADVENTURE（探险）、INTIMATE（亲密）、FUN（趣味）
 	Category string `gorm:"size:20;not null;default:'CLASSIC'" json:"category" example:"CLASSIC"`
 
+	// CategoryName 分类中文名，由 category 字段转换而来，不存数据库
+	CategoryName string `gorm:"-" json:"category_name" example:"经典"`
+
 	// IconBase64 图标的 base64 编码，格式：data:image/png;base64,xxx
 	IconBase64 *string `gorm:"type:text" json:"icon_base64,omitempty"`
 
@@ -105,4 +112,20 @@ type Position struct {
 
 	// CreatedAt 创建时间
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// CategoryNameMap 分类枚举值到中文的映射
+var CategoryNameMap = map[string]string{
+	"CLASSIC":   "经典",
+	"ADVENTURE": "探险",
+	"INTIMATE":  "亲密",
+	"FUN":       "趣味",
+}
+
+// AfterFind GORM 查询后自动填充 CategoryName
+func (p *Position) AfterFind(tx *gorm.DB) error {
+	if name, ok := CategoryNameMap[p.Category]; ok {
+		p.CategoryName = name
+	}
+	return nil
 }
