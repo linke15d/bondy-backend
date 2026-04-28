@@ -36,10 +36,11 @@ type RedisConfig struct {
 }
 
 type JWTConfig struct {
-	AccessSecret        string
-	RefreshSecret       string
-	AccessExpireMinutes int
-	RefreshExpireDays   int
+	AccessSecret             string
+	RefreshSecret            string
+	AccessExpireMinutes      int
+	RefreshExpireDays        int
+	AdminAccessExpireMinutes int
 }
 
 func Load() *Config {
@@ -70,10 +71,11 @@ func Load() *Config {
 			Password: viper.GetString("REDIS_PASSWORD"),
 		},
 		JWT: JWTConfig{
-			AccessSecret:        viper.GetString("JWT_ACCESS_SECRET"),
-			RefreshSecret:       viper.GetString("JWT_REFRESH_SECRET"),
-			AccessExpireMinutes: viper.GetInt("JWT_ACCESS_EXPIRE_MINUTES"),
-			RefreshExpireDays:   viper.GetInt("JWT_REFRESH_EXPIRE_DAYS"),
+			AccessSecret:             viper.GetString("JWT_ACCESS_SECRET"),
+			RefreshSecret:            viper.GetString("JWT_REFRESH_SECRET"),
+			AccessExpireMinutes:      viper.GetInt("JWT_ACCESS_EXPIRE_MINUTES"),
+			RefreshExpireDays:        viper.GetInt("JWT_REFRESH_EXPIRE_DAYS"),
+			AdminAccessExpireMinutes: viper.GetInt("JWT_ADMIN_ACCESS_EXPIRE_MINUTES"),
 		},
 	}
 }
