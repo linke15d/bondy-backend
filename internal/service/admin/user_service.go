@@ -7,6 +7,7 @@ import (
 
 	"github.com/linke15d/bondy-backend/internal/model"
 	"github.com/linke15d/bondy-backend/internal/repository"
+	"github.com/linke15d/bondy-backend/pkg/timeformat"
 )
 
 // AdminUserService 用户管理业务逻辑
@@ -136,7 +137,7 @@ func (s *AdminUserService) DeleteUser(userID string) error {
 		return errors.New("用户不存在")
 	}
 
-	now := time.Now()
+	now := timeformat.LocalTime(time.Now())
 	user.DeletedAt = &now
 	return s.userRepo.Update(user)
 }

@@ -2,7 +2,11 @@
 // 对应数据库表结构，使用 GORM tag 描述字段约束
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/linke15d/bondy-backend/pkg/timeformat"
+)
 
 // User 用户表
 // 存储所有注册用户的基本信息
@@ -38,12 +42,12 @@ type User struct {
 	// FCMToken Firebase 推送通知 token，用于向设备发送消息，不在 API 响应中返回
 	FCMToken *string `gorm:"size:500" json:"-"`
 
-	// CreatedAt 账号创建时间，由数据库自动填充
-	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
+	// CreatedAt 账号创建时间
+	CreatedAt timeformat.LocalTime `json:"created_at" example:"2024-01-01 12:00:00"`
 
-	// UpdatedAt 账号最后更新时间，由数据库自动维护
-	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+	// UpdatedAt 账号最后更新时间
+	UpdatedAt timeformat.LocalTime `json:"updated_at" example:"2024-01-01 12:00:00"`
 
-	// DeletedAt 账号软删除时间，不为 null 表示已注销，不在 API 响应中返回
-	DeletedAt *time.Time `gorm:"index" json:"-"`
+	// DeletedAt 软删除时间
+	DeletedAt *timeformat.LocalTime `gorm:"index" json:"-"`
 }
