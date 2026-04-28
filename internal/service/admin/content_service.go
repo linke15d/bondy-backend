@@ -3,6 +3,7 @@ package admin
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/linke15d/bondy-backend/internal/model"
 	"gorm.io/gorm"
@@ -26,12 +27,18 @@ type CreateTagInput struct {
 
 	// Type 标签类型：LOCATION 或 ACTIVITY
 	Type string `json:"type" binding:"required,oneof=LOCATION ACTIVITY" example:"LOCATION"`
+
+	IconBase64 *string `json:"icon_base64"`
 }
 
 // CreatePositionInput 创建系统姿势请求参数
 type CreatePositionInput struct {
 	// Name 姿势名称
 	Name string `json:"name" binding:"required,max=30" example:"传教士"`
+
+	// IconBase64 图标 base64 编码，格式：data:image/png;base64,xxx
+	// 建议图标尺寸 64x64px 以内，大小不超过 50KB
+	IconBase64 *string `json:"icon_base64"`
 }
 
 // ListSystemTags 获取系统预设标签列表
@@ -70,14 +77,37 @@ func (s *AdminContentService) ListSystemPositions() ([]model.Position, error) {
 	return positions, err
 }
 
+// validateBase64Icon 验证 base64 图标格式和大小
+func validateBase64Icon(base64Str string) error {
+	// 必须是 data:image/xxx;base64, 格式
+	if !strings.HasPrefix(base64Str, "data:image/") {
+		return errors.New("图标格式错误，必须是 base64 编码的图片")
+	}
+
+	// 限制大小，base64 字符串不超过 100KB
+	if len(base64Str) > 100*1024 {
+		return errors.New("图标太大，base64 编码后不能超过 100KB，建议使用 64x64px 的小图标")
+	}
+
+	return nil
+}
+
 // CreateSystemPosition 创建系统预设姿势
 func (s *AdminContentService) CreateSystemPosition(input CreatePositionInput) (*model.Position, error) {
+	// 验证 base64 格式
+	if input.IconBase64 != nil {
+		if err := validateBase64Icon(*input.IconBase64); err != nil {
+			return nil, err
+		}
+	}
+
 	position := &model.Position{
-		Name:     input.Name,
-		IsSystem: true,
+		Name:       input.Name,
+		IconBase64: input.IconBase64,
+		IsSystem:   true,
 	}
 	if err := s.db.Create(position).Error; err != nil {
-		return nil, errors.New("创建姿势失败")
+		return nil, errors.New("创建失败")
 	}
 	return position, nil
 }

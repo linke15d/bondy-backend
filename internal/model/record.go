@@ -68,6 +68,9 @@ type Tag struct {
 	// Type 标签类型：LOCATION（地点）或 ACTIVITY（活动）
 	Type string `gorm:"size:20;not null" json:"type" example:"LOCATION"`
 
+	// IconBase64 标签图标 base64
+	IconBase64 *string `gorm:"type:text" json:"icon_base64,omitempty"`
+
 	// IsSystem 是否为系统预设标签，系统标签不可删除
 	IsSystem bool `gorm:"default:false" json:"is_system"`
 
@@ -87,6 +90,9 @@ type Position struct {
 
 	// Name 姿势名称
 	Name string `gorm:"size:30;not null" json:"name" example:"传教士"`
+
+	// IconBase64 图标的 base64 编码，格式：data:image/png;base64,xxx
+	IconBase64 *string `gorm:"type:text" json:"icon_base64,omitempty"`
 
 	// IsSystem 是否为系统预设姿势
 	IsSystem bool `gorm:"default:false" json:"is_system"`
