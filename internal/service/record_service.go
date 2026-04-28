@@ -276,7 +276,7 @@ func (s *RecordService) GetTags(userID string, tagType string) ([]model.Tag, err
 }
 
 // GetPositions 获取姿势列表
-func (s *RecordService) GetPositions(userID string) ([]model.Position, error) {
+func (s *RecordService) GetPositions(userID string) ([]repository.PositionsByCategory, error) {
 	couple, err := s.coupleRepo.FindByUserID(userID)
 	if err != nil {
 		return nil, errors.New("暂无伴侣关系")

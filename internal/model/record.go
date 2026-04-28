@@ -91,6 +91,9 @@ type Position struct {
 	// Name 姿势名称
 	Name string `gorm:"size:30;not null" json:"name" example:"传教士"`
 
+	// Category 姿势分类：CLASSIC（经典）、ADVENTURE（探险）、INTIMATE（亲密）、FUN（趣味）
+	Category string `gorm:"size:20;not null;default:'CLASSIC'" json:"category" example:"CLASSIC"`
+
 	// IconBase64 图标的 base64 编码，格式：data:image/png;base64,xxx
 	IconBase64 *string `gorm:"type:text" json:"icon_base64,omitempty"`
 

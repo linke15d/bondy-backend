@@ -35,7 +35,8 @@ type CreateTagInput struct {
 type CreatePositionInput struct {
 	// Name 姿势名称
 	Name string `json:"name" binding:"required,max=30" example:"传教士"`
-
+	// Category 分类：CLASSIC / ADVENTURE / INTIMATE / FUN
+	Category string `json:"category" binding:"required,oneof=CLASSIC ADVENTURE INTIMATE FUN" example:"CLASSIC"`
 	// IconBase64 图标 base64 编码，格式：data:image/png;base64,xxx
 	// 建议图标尺寸 64x64px 以内，大小不超过 50KB
 	IconBase64 *string `json:"icon_base64"`

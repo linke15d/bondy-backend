@@ -105,15 +105,36 @@ func (r *RecordRepository) FindTagsByType(tagType string, coupleID string) ([]mo
 	return tags, err
 }
 
+// PositionsByCategory 按分类分组的姿势列表
+type PositionsByCategory struct {
+	// Category 分类名
+	Category string `json:"category"`
+	// Positions 该分类下的姿势列表
+	Positions []model.Position `json:"positions"`
+}
+
 // FindPositions 获取姿势列表
 // 返回系统预设姿势 + 当前伴侣自定义姿势
-func (r *RecordRepository) FindPositions(coupleID string) ([]model.Position, error) {
-	var positions []model.Position
-	err := r.db.
-		Where("is_system = true OR couple_id = ?", coupleID).
-		Order("is_system DESC, name ASC").
-		Find(&positions).Error
-	return positions, err
+func (r *RecordRepository) FindPositions(coupleID string) ([]PositionsByCategory, error) {
+	categories := []string{"CLASSIC", "ADVENTURE", "INTIMATE", "FUN"}
+	var result []PositionsByCategory
+
+	for _, cat := range categories {
+		var positions []model.Position
+		err := r.db.
+			Where("(is_system = true OR couple_id = ?) AND category = ?", coupleID, cat).
+			Order("is_system DESC, name ASC").
+			Find(&positions).Error
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, PositionsByCategory{
+			Category:  cat,
+			Positions: positions,
+		})
+	}
+
+	return result, nil
 }
 
 // CreateTag 创建自定义标签
