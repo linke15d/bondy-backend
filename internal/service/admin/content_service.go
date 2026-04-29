@@ -362,14 +362,13 @@ type CreatePositionInput struct {
 
 // UpdatePositionInput 更新姿势请求参数
 type UpdatePositionInput struct {
-	// Names 更新各语言名称，传入的语言会覆盖，未传的保持不变
-	Names []PositionNameInput `json:"names"`
-
-	// CategoryID 修改所属分类
 	CategoryID *string `json:"category_id"`
-
-	// IconBase64 修改图标
 	IconBase64 *string `json:"icon_base64"`
+	IsActive   *bool   `json:"is_active"`
+	Names      []struct {
+		LanguageCode string `json:"language_code"`
+		Name         string `json:"name"`
+	} `json:"names"`
 }
 
 // CreateSystemPosition 创建系统预设姿势
@@ -448,18 +447,30 @@ func (s *AdminContentService) UpdateSystemPosition(id string, input UpdatePositi
 	}
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// 所有字段更新都要在 Save 之前
 		if input.CategoryID != nil {
 			position.CategoryID = *input.CategoryID
 		}
 		if input.IconBase64 != nil {
 			position.IconBase64 = input.IconBase64
 		}
+		if input.IsActive != nil {
+			position.IsActive = *input.IsActive
+		}
 
-		if err := tx.Save(&position).Error; err != nil {
+		// 更新 DefaultName
+		for _, n := range input.Names {
+			if n.LanguageCode == "zh-CN" {
+				position.DefaultName = n.Name
+				break
+			}
+		}
+
+		if err := tx.Save(&position).Error; err != nil { // Save 在最后
 			return errors.New("更新失败")
 		}
 
-		// 更新语言名称（upsert）
+		// 更新语言名称
 		for _, n := range input.Names {
 			var existing model.PositionName
 			err := tx.Where("position_id = ? AND language_code = ?", id, n.LanguageCode).
@@ -486,8 +497,7 @@ func (s *AdminContentService) UpdateSystemPosition(id string, input UpdatePositi
 		return nil, err
 	}
 
-	s.db.Where("position_id = ?", id).Find(&position.Names)
-	s.db.Preload("Category").First(&position, "id = ?", id)
+	s.db.Preload("Names").Preload("Category").First(&position, "id = ?", id)
 	return &position, nil
 }
 
