@@ -254,6 +254,9 @@ type PositionListInput struct {
 	// Keyword 搜索关键词，匹配姿势默认名称
 	Keyword string `json:"keyword"`
 
+	// IsActive 按启用状态过滤，不传返回全部
+	IsActive *bool `json:"is_active"`
+
 	// Page 页码，默认 1
 	Page int `json:"page" binding:"omitempty,min=1" example:"1"`
 

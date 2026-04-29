@@ -156,7 +156,6 @@ func (h *AdminContentHandler) ListSystemPositions(c *gin.Context) {
 		response.ServerError(c)
 		return
 	}
-
 	response.Success(c, result)
 }
 
@@ -168,6 +167,8 @@ type CreatePositionRequest struct {
 	CategoryID string `json:"category_id" example:"uuid"`
 	// IconBase64 图标 base64，可选
 	IconBase64 *string `json:"icon_base64"`
+	// IsActive 是否启用
+	IsActive *bool `json:"is_active"`
 }
 
 // PositionNameRequest 单个语言姿势名称
@@ -182,6 +183,8 @@ type UpdatePositionRequest struct {
 	Names      []PositionNameRequest `json:"names"`
 	CategoryID *string               `json:"category_id"`
 	IconBase64 *string               `json:"icon_base64"`
+	// IsActive 是否启用
+	IsActive *bool `json:"is_active"`
 }
 
 // CreateSystemPosition 创建系统姿势

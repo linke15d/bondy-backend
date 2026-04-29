@@ -112,6 +112,9 @@ type Position struct {
 	// IsSystem 是否为系统预设姿势
 	IsSystem bool `gorm:"default:false" json:"is_system"`
 
+	// IsActive 是否启用，禁用后 App 端不显示此姿势
+	IsActive bool `gorm:"default:true" json:"is_active"`
+
 	// CoupleID 所属伴侣 ID，系统姿势此字段为空
 	CoupleID *string `gorm:"type:uuid;index" json:"couple_id,omitempty"`
 
