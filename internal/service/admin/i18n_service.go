@@ -33,6 +33,9 @@ type CreateLanguageInput struct {
 	// IsDefault 是否设为默认语言
 	IsDefault bool `json:"is_default" example:"false"`
 
+	// IsActive 是否启用，默认启用
+	IsActive bool `json:"is_active" example:"true"`
+
 	// SortOrder 排序
 	SortOrder int `json:"sort_order" example:"1"`
 }
@@ -51,6 +54,7 @@ func (s *I18nService) CreateLanguage(input CreateLanguageInput) (*model.Supporte
 		Name:      input.Name,
 		IsDefault: input.IsDefault,
 		SortOrder: input.SortOrder,
+		IsActive:  input.IsActive,
 	}
 
 	if err := s.db.Create(lang).Error; err != nil {
