@@ -36,7 +36,7 @@ func main() {
 	jwtManager := jwtpkg.NewManager(
 		cfg.JWT.AccessSecret,
 		cfg.JWT.RefreshSecret,
-		cfg.JWT.AccessExpireMinutes,
+		cfg.JWT.AdminAccessExpireMinutes,
 		cfg.JWT.RefreshExpireDays,
 	)
 
