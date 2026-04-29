@@ -85,9 +85,19 @@ func (s *AdminContentService) CreatePositionCategory(input CreateCategoryInput) 
 		}
 	}
 
+	// 取中文名作为 DefaultName，没有中文则取第一个
+	defaultName := input.Names[0].Name
+	for _, n := range input.Names {
+		if n.LanguageCode == "zh-CN" {
+			defaultName = n.Name
+			break
+		}
+	}
+
 	category := &model.PositionCategory{
-		SortOrder: input.SortOrder,
-		IsActive:  true,
+		DefaultName: defaultName,
+		SortOrder:   input.SortOrder,
+		IsActive:    true,
 	}
 
 	// 开启事务
@@ -149,10 +159,16 @@ func (s *AdminContentService) UpdatePositionCategory(id string, input UpdateCate
 		if input.IsActive != nil {
 			category.IsActive = *input.IsActive
 		}
+		// 如果更新了 zh-CN 的名称，同步更新 DefaultName
+		for _, n := range input.Names {
+			if n.LanguageCode == "zh-CN" {
+				category.DefaultName = n.Name
+				break
+			}
+		}
 		if err := tx.Save(&category).Error; err != nil {
 			return errors.New("更新失败")
 		}
-
 		// 更新语言名称（upsert）
 		for _, n := range input.Names {
 			var existing model.PositionCategoryName
