@@ -3,6 +3,7 @@ package admin
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/linke15d/bondy-backend/internal/model"
@@ -84,6 +85,17 @@ type UpdateCategoryInput struct {
 
 // CreatePositionCategory 创建姿势分类
 func (s *AdminContentService) CreatePositionCategory(input CreateCategoryInput) (*model.PositionCategory, error) {
+	// 检查是否有重复的名称（任意语言下名称相同都不允许）
+	for _, n := range input.Names {
+		var count int64
+		s.db.Model(&model.PositionCategoryName{}).
+			Where("language_code = ? AND name = ?", n.LanguageCode, n.Name).
+			Count(&count)
+		if count > 0 {
+			return nil, fmt.Errorf("「%s」名称已存在，请勿重复添加", n.Name)
+		}
+	}
+
 	category := &model.PositionCategory{
 		SortOrder: input.SortOrder,
 		IsActive:  true,
@@ -184,15 +196,31 @@ func (s *AdminContentService) UpdatePositionCategory(id string, input UpdateCate
 }
 
 // DeletePositionCategory 删除分类
-// 删除前检查是否有姿势关联此分类
+// 删除前检查是否有姿势关联此分类，同时级联删除多语言名称
 func (s *AdminContentService) DeletePositionCategory(id string) error {
+	// 检查是否有姿势关联此分类
 	var count int64
 	s.db.Model(&model.Position{}).Where("category_id = ?", id).Count(&count)
 	if count > 0 {
 		return errors.New("该分类下还有姿势，请先删除或移动姿势后再删除分类")
 	}
 
-	return s.db.Where("id = ?", id).Delete(&model.PositionCategory{}).Error
+	// 开启事务，先删除多语言名称，再删除分类
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// 删除关联的多语言名称
+		if err := tx.Where("category_id = ?", id).
+			Delete(&model.PositionCategoryName{}).Error; err != nil {
+			return errors.New("删除语言名称失败")
+		}
+
+		// 删除分类
+		if err := tx.Where("id = ?", id).
+			Delete(&model.PositionCategory{}).Error; err != nil {
+			return errors.New("删除分类失败")
+		}
+
+		return nil
+	})
 }
 
 // CreateSystemTag 创建系统预设标签
