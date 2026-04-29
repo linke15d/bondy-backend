@@ -66,6 +66,9 @@ type Tag struct {
 	// ID 标签唯一标识
 	ID string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 
+	// DefaultName 默认名称（中文）
+	DefaultName string `gorm:"size:30;not null" json:"default_name" example:"家里"`
+
 	// Name 标签名称，如"家里"、"酒店"、"浪漫"
 	Name string `gorm:"size:30;not null" json:"name" example:"家里"`
 
@@ -86,30 +89,26 @@ type Tag struct {
 }
 
 // Position 姿势表
-// 系统预设姿势 + 用户自定义姿势
 // 对应数据库表名: positions
 type Position struct {
 	// ID 姿势唯一标识
 	ID string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-
+	// DefaultName 默认名称（中文），用于后台展示和搜索
+	DefaultName string `gorm:"size:30;not null" json:"default_name" example:"传教士"`
 	// Name 姿势名称
 	Name string `gorm:"size:30;not null" json:"name" example:"传教士"`
-
-	// Category 姿势分类：CLASSIC（经典）、ADVENTURE（探险）、INTIMATE（亲密）、FUN（趣味）
+	// CategoryID 所属分类 ID，关联 position_categories 表
+	CategoryID string `gorm:"type:uuid;not null;index" json:"category_id"`
+	// Category 关联的分类对象，查询时填充
 	Category string `gorm:"size:20;not null;default:'CLASSIC'" json:"category" example:"CLASSIC"`
-
 	// CategoryName 分类中文名，由 category 字段转换而来，不存数据库
 	CategoryName string `gorm:"-" json:"category_name" example:"经典"`
-
 	// IconBase64 图标的 base64 编码，格式：data:image/png;base64,xxx
 	IconBase64 *string `gorm:"type:text" json:"icon_base64,omitempty"`
-
 	// IsSystem 是否为系统预设姿势
 	IsSystem bool `gorm:"default:false" json:"is_system"`
-
 	// CoupleID 所属伴侣 ID，系统姿势此字段为空
 	CoupleID *string `gorm:"type:uuid;index" json:"couple_id,omitempty"`
-
 	// CreatedAt 创建时间
 	CreatedAt time.Time `json:"created_at"`
 }

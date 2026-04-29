@@ -232,7 +232,13 @@ func (h *RecordHandler) GetTags(c *gin.Context) {
 func (h *RecordHandler) GetPositions(c *gin.Context) {
 	userID := c.GetString("userID")
 
-	positions, err := h.recordService.GetPositions(userID)
+	// 从 context 取语言，默认中文
+	lang := c.GetString("lang")
+	if lang == "" {
+		lang = "zh-CN"
+	}
+
+	positions, err := h.recordService.GetPositions(userID, lang)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -245,4 +251,31 @@ func (h *RecordHandler) GetPositions(c *gin.Context) {
 type GetTagsInput struct {
 	// Type 标签类型：LOCATION（地点标签）或 ACTIVITY（活动标签）
 	Type string `json:"type" binding:"required,oneof=LOCATION ACTIVITY" example:"LOCATION"`
+}
+
+// GetPositionCategories 获取姿势分类列表
+//
+//	@Summary		获取姿势分类列表
+//	@Description	获取所有启用的姿势分类，根据 Accept-Language Header 返回对应语言的分类名称
+//	@Tags			亲密记录
+//	@Produce		json
+//	@Param			Authorization	header		string													true	"Bearer {access_token}"
+//	@Param			Accept-Language	header		string													false	"语言代码，如 zh-CN / en，默认 zh-CN"
+//	@Success		200				{object}	response.Response{data=[]model.PositionCategory}		"分类列表"
+//	@Failure		401				{object}	response.Response										"未登录"
+//	@Security		BearerAuth
+//	@Router			/api/v1/records/categories [post]
+func (h *RecordHandler) GetPositionCategories(c *gin.Context) {
+	lang := c.GetString("lang")
+	if lang == "" {
+		lang = "zh-CN"
+	}
+
+	categories, err := h.recordService.GetPositionCategories(lang)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Success(c, categories)
 }

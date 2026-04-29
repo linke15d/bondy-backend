@@ -62,13 +62,14 @@ func Setup(
 		// 亲密记录
 		records := protected.Group("/records")
 		{
-			records.POST("/create", recordHandler.CreateRecord)    // 创建记录
-			records.POST("/list", recordHandler.ListRecords)       // 获取列表
-			records.POST("/detail", recordHandler.GetRecord)       // 获取详情
-			records.POST("/update", recordHandler.UpdateRecord)    // 更新记录
-			records.POST("/delete", recordHandler.DeleteRecord)    // 删除记录
-			records.POST("/tags", recordHandler.GetTags)           // 获取标签列表
-			records.POST("/positions", recordHandler.GetPositions) // 获取姿势列表
+			records.POST("/create", recordHandler.CreateRecord)              // 创建记录
+			records.POST("/list", recordHandler.ListRecords)                 // 获取列表
+			records.POST("/detail", recordHandler.GetRecord)                 // 获取详情
+			records.POST("/update", recordHandler.UpdateRecord)              // 更新记录
+			records.POST("/delete", recordHandler.DeleteRecord)              // 删除记录
+			records.POST("/tags", recordHandler.GetTags)                     // 获取标签列表
+			records.POST("/positions", recordHandler.GetPositions)           // 获取姿势列表
+			records.POST("/categories", recordHandler.GetPositionCategories) //获取姿势分类列表
 		}
 
 		// 数据统计

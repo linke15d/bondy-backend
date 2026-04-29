@@ -33,6 +33,7 @@ func Init(cfg *config.DBConfig) *gorm.DB {
 		&model.RefreshToken{},
 		&model.Couple{},
 		&model.Tag{},
+		&model.PositionCategory{},
 		&model.Position{},
 		&model.Record{},
 		&model.Wishlist{},

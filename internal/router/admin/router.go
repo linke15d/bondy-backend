@@ -57,12 +57,24 @@ func Setup(
 		// 内容管理
 		content := protected.Group("/content")
 		{
+			// 姿势分类
+			content.POST("/categories/create", contentHandler.CreatePositionCategory)
+			content.POST("/categories/list", contentHandler.ListPositionCategories)
+			content.POST("/categories/update", contentHandler.UpdatePositionCategory)
+			content.POST("/categories/delete", contentHandler.DeletePositionCategory)
+
+			// 标签
 			content.POST("/tags/list", contentHandler.ListSystemTags)
 			content.POST("/tags/create", contentHandler.CreateSystemTag)
 			content.POST("/tags/delete", contentHandler.DeleteSystemTag)
+
+			// 姿势
 			content.POST("/positions/list", contentHandler.ListSystemPositions)
 			content.POST("/positions/create", contentHandler.CreateSystemPosition)
 			content.POST("/positions/delete", contentHandler.DeleteSystemPosition)
+
+			// 图标上传
+			// content.POST("/upload/icon", contentHandler.UploadIcon)
 		}
 
 		// 数据统计
