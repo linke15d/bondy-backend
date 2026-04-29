@@ -29,6 +29,24 @@ type GetTagTypeInput struct {
 	Type string `json:"type" binding:"omitempty,oneof=LOCATION ACTIVITY"`
 }
 
+// CreateCategoryRequest Swagger 展示用
+type CreateCategoryRequest struct {
+	// Names 各语言名称列表，至少传一种语言
+	Names []CategoryNameRequest `json:"names" example:"[{\"language_code\":\"zh-CN\",\"name\":\"经典\"}]"`
+	// SortOrder 排序值，数字越小越靠前
+	SortOrder int `json:"sort_order" example:"1"`
+	// IsActive 修改启用状态
+	IsActive *bool `json:"is_active" example:"true"`
+}
+
+// CategoryNameRequest 单个语言名称
+type CategoryNameRequest struct {
+	// LanguageCode 语言代码，如 zh-CN / en / ja / ko
+	LanguageCode string `json:"language_code" example:"zh-CN"`
+	// Name 该语言下的分类名称
+	Name string `json:"name" example:"经典"`
+}
+
 // ListSystemTags 获取系统标签列表
 //
 //	@Summary		系统标签列表
@@ -200,7 +218,7 @@ func (h *AdminContentHandler) DeleteSystemPosition(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string													true	"Bearer {access_token}"
-//	@Param			body			body		adminService.CreateCategoryInput						true	"分类信息"
+//	@Param			body			body		CreateCategoryRequest						true	"分类信息"
 //	@Success		201				{object}	response.Response{data=model.PositionCategory}			"创建成功"
 //	@Failure		400				{object}	response.Response										"参数错误或分类代码已存在"
 //	@Failure		401				{object}	response.Response										"未登录"
@@ -242,18 +260,30 @@ func (h *AdminContentHandler) ListPositionCategories(c *gin.Context) {
 	response.Success(c, categories)
 }
 
+// UpdateCategoryRequest Swagger 展示用
+type UpdateCategoryRequest struct {
+	// ID 分类 ID
+	ID string `json:"id" binding:"required"`
+	// Names 更新各语言名称，传入的语言会覆盖，未传的语言保持不变
+	Names []CategoryNameRequest `json:"names"`
+	// SortOrder 修改排序
+	SortOrder *int `json:"sort_order" example:"1"`
+	// IsActive 修改启用状态
+	IsActive *bool `json:"is_active" example:"true"`
+}
+
 // UpdatePositionCategory 更新姿势分类
 //
 //	@Summary		更新姿势分类
-//	@Description	修改分类的名称、排序或启用状态
-//	@Tags			后台管理-内容管理
+//	@Description	修改分类的多语言名称、排序或启用状态，传入的语言名称会覆盖原有内容，未传的语言保持不变
+//	@Tags			内容管理
 //	@Accept			json
 //	@Produce		json
-//	@Param			Authorization	header		string													true	"Bearer {access_token}"
-//	@Param			body			body		UpdateCategoryRequest									true	"更新内容（需包含 id）"
-//	@Success		200				{object}	response.Response{data=model.PositionCategory}			"更新后的分类"
-//	@Failure		400				{object}	response.Response										"参数错误"
-//	@Failure		401				{object}	response.Response										"未登录"
+//	@Param			Authorization	header		string											true	"Bearer {access_token}"
+//	@Param			body			body		UpdateCategoryRequest							true	"更新内容（需包含 id）"
+//	@Success		200				{object}	response.Response{data=model.PositionCategory}	"更新后的分类"
+//	@Failure		400				{object}	response.Response								"参数错误"
+//	@Failure		401				{object}	response.Response								"未登录"
 //	@Security		BearerAuth
 //	@Router			/admin/v1/content/categories/update [post]
 func (h *AdminContentHandler) UpdatePositionCategory(c *gin.Context) {
@@ -302,12 +332,4 @@ func (h *AdminContentHandler) DeletePositionCategory(c *gin.Context) {
 	}
 
 	response.Success(c, nil)
-}
-
-// UpdateCategoryRequest 更新分类请求（Swagger 用）
-type UpdateCategoryRequest struct {
-	ID          string  `json:"id" binding:"required"`
-	DefaultName *string `json:"default_name"`
-	SortOrder   *int    `json:"sort_order"`
-	IsActive    *bool   `json:"is_active"`
 }
