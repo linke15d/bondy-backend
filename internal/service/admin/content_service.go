@@ -289,6 +289,7 @@ func (s *AdminContentService) ListSystemPositions(input PositionListInput) (*Pos
 	}
 
 	query := s.db.Model(&model.Position{}).
+		Preload("Names").
 		Preload("Category").
 		Where("is_system = true")
 
