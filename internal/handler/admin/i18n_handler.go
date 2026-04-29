@@ -67,28 +67,61 @@ func (h *I18nHandler) ListLanguages(c *gin.Context) {
 	response.Success(c, languages)
 }
 
-// SaveTranslations 批量保存翻译
+// UpdateLanguage 更新语言
 //
-//	@Summary		保存翻译
-//	@Description	批量保存某条记录的翻译内容，已存在的语言会更新，不存在的会新建。一次可以提交多种语言的翻译。
+//	@Summary		更新语言
+//	@Description	修改语言名称、排序、启用状态或设为默认语言
 //	@Tags			多语言管理
 //	@Accept			json
 //	@Produce		json
-//	@Param			Authorization	header		string								true	"Bearer {access_token}"
-//	@Param			body			body		adminService.SaveTranslationsInput	true	"翻译内容"
-//	@Success		200				{object}	response.Response					"保存成功"
-//	@Failure		400				{object}	response.Response					"参数错误"
-//	@Failure		401				{object}	response.Response					"未登录"
+//	@Param			Authorization	header		string												true	"Bearer {access_token}"
+//	@Param			body			body		UpdateLanguageRequest								true	"更新内容（需包含 id）"
+//	@Success		200				{object}	response.Response{data=model.SupportedLanguage}		"更新后的语言"
+//	@Failure		400				{object}	response.Response									"参数错误"
+//	@Failure		401				{object}	response.Response									"未登录"
 //	@Security		BearerAuth
-//	@Router			/admin/v1/i18n/translations/save [post]
-func (h *I18nHandler) SaveTranslations(c *gin.Context) {
-	var input adminService.SaveTranslationsInput
+//	@Router			/admin/v1/i18n/languages/update [post]
+func (h *I18nHandler) UpdateLanguage(c *gin.Context) {
+	var req struct {
+		ID string `json:"id" binding:"required"`
+		adminService.UpdateLanguageInput
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	lang, err := h.i18nService.UpdateLanguage(req.ID, req.UpdateLanguageInput)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Success(c, lang)
+}
+
+// DeleteLanguage 删除语言
+//
+//	@Summary		删除语言
+//	@Description	删除指定语言，默认语言和有翻译内容的语言不允许删除
+//	@Tags			多语言管理
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header		string				true	"Bearer {access_token}"
+//	@Param			body			body		ContentIDInput		true	"语言 ID"
+//	@Success		200				{object}	response.Response	"删除成功"
+//	@Failure		400				{object}	response.Response	"默认语言不允许删除或有翻译内容"
+//	@Failure		401				{object}	response.Response	"未登录"
+//	@Security		BearerAuth
+//	@Router			/admin/v1/i18n/languages/delete [post]
+func (h *I18nHandler) DeleteLanguage(c *gin.Context) {
+	var input ContentIDInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
 
-	if err := h.i18nService.SaveTranslations(input); err != nil {
+	if err := h.i18nService.DeleteLanguage(input.ID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -96,68 +129,11 @@ func (h *I18nHandler) SaveTranslations(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetTranslations 获取翻译列表
-//
-//	@Summary		获取翻译
-//	@Description	获取某条记录某个字段的所有语言翻译，用于编辑页面回显
-//	@Tags			多语言管理
-//	@Accept			json
-//	@Produce		json
-//	@Param			Authorization	header		string											true	"Bearer {access_token}"
-//	@Param			body			body		adminService.GetTranslationsInput				true	"查询条件"
-//	@Success		200				{object}	response.Response{data=adminService.TranslationResult}	"翻译列表"
-//	@Failure		401				{object}	response.Response								"未登录"
-//	@Security		BearerAuth
-//	@Router			/admin/v1/i18n/translations/get [post]
-func (h *I18nHandler) GetTranslations(c *gin.Context) {
-	var input adminService.GetTranslationsInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
-	result, err := h.i18nService.GetTranslations(input)
-	if err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
-	response.Success(c, result)
-}
-
-// GetAllTranslationsByRef 获取某条记录的全部翻译
-//
-//	@Summary		获取记录全部翻译
-//	@Description	获取某条记录所有字段的所有语言翻译，用于编辑姿势/标签时一次性加载全部翻译内容
-//	@Tags			多语言管理
-//	@Accept			json
-//	@Produce		json
-//	@Param			Authorization	header		string										true	"Bearer {access_token}"
-//	@Param			body			body		GetAllTranslationsRequest					true	"查询条件"
-//	@Success		200				{object}	response.Response{data=[]model.Translation}	"翻译列表"
-//	@Failure		401				{object}	response.Response							"未登录"
-//	@Security		BearerAuth
-//	@Router			/admin/v1/i18n/translations/all [post]
-func (h *I18nHandler) GetAllTranslationsByRef(c *gin.Context) {
-	var input GetAllTranslationsRequest
-	if err := c.ShouldBindJSON(&input); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
-	result, err := h.i18nService.GetAllTranslationsByRef(input.Module, input.RefID)
-	if err != nil {
-		response.ServerError(c)
-		return
-	}
-
-	response.Success(c, result)
-}
-
-// GetAllTranslationsRequest 获取全部翻译请求参数
-type GetAllTranslationsRequest struct {
-	// Module 模块名：position / tag
-	Module string `json:"module" binding:"required"`
-	// RefID 关联记录 ID
-	RefID string `json:"ref_id" binding:"required"`
+// UpdateLanguageRequest 更新语言请求（Swagger 用）
+type UpdateLanguageRequest struct {
+	ID        string  `json:"id" binding:"required"`
+	Name      *string `json:"name"`
+	IsDefault *bool   `json:"is_default"`
+	IsActive  *bool   `json:"is_active"`
+	SortOrder *int    `json:"sort_order"`
 }

@@ -22,6 +22,7 @@ func Setup(
 	subHandler *adminHandler.AdminSubHandler,
 	statsHandler *adminHandler.AdminStatsHandler,
 	contentHandler *adminHandler.AdminContentHandler,
+	i18nHandler *adminHandler.I18nHandler,
 ) {
 	// Swagger 文档
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(
@@ -72,15 +73,22 @@ func Setup(
 			content.POST("/positions/list", contentHandler.ListSystemPositions)
 			content.POST("/positions/create", contentHandler.CreateSystemPosition)
 			content.POST("/positions/delete", contentHandler.DeleteSystemPosition)
-
-			// 图标上传
-			// content.POST("/upload/icon", contentHandler.UploadIcon)
 		}
 
 		// 数据统计
 		stats := protected.Group("/stats")
 		{
 			stats.POST("/dashboard", statsHandler.GetDashboard)
+		}
+
+		// 多语言管理
+		i18n := protected.Group("/i18n")
+		{
+			// 语言管理
+			i18n.POST("/languages/create", i18nHandler.CreateLanguage) // 创建语言
+			i18n.POST("/languages/list", i18nHandler.ListLanguages)    // 语言列表
+			i18n.POST("/languages/update", i18nHandler.UpdateLanguage) // 更新语言
+			i18n.POST("/languages/delete", i18nHandler.DeleteLanguage) // 删除语言
 		}
 	}
 }

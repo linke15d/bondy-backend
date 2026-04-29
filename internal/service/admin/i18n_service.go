@@ -73,41 +73,76 @@ func (s *I18nService) UpdateLanguageStatus(id string, isActive bool) error {
 		Update("is_active", isActive).Error
 }
 
-// ─────────────────────────────────────────
-// 翻译管理
-// ─────────────────────────────────────────
+// UpdateLanguageInput 更新语言请求参数
+type UpdateLanguageInput struct {
+	// Name 修改语言名称
+	Name *string `json:"name" binding:"omitempty,max=50" example:"English"`
 
-// TranslationItem 单条翻译内容
-type TranslationItem struct {
-	// LanguageCode 语言代码
-	LanguageCode string `json:"language_code" binding:"required" example:"en"`
-	// Content 翻译内容
-	Content string `json:"content" binding:"required" example:"Missionary"`
+	// IsDefault 是否设为默认语言
+	IsDefault *bool `json:"is_default"`
+
+	// IsActive 是否启用
+	IsActive *bool `json:"is_active"`
+
+	// SortOrder 修改排序
+	SortOrder *int `json:"sort_order"`
 }
 
-// SaveTranslationsInput 批量保存翻译请求参数
-type SaveTranslationsInput struct {
-	// Module 模块名：position / tag
-	Module string `json:"module" binding:"required,oneof=position tag" example:"position"`
+// UpdateLanguage 更新语言
+func (s *I18nService) UpdateLanguage(id string, input UpdateLanguageInput) (*model.SupportedLanguage, error) {
+	var lang model.SupportedLanguage
+	if err := s.db.Where("id = ?", id).First(&lang).Error; err != nil {
+		return nil, errors.New("语言不存在")
+	}
 
-	// RefID 关联记录 ID（姿势 ID 或标签 ID）
-	RefID string `json:"ref_id" binding:"required"`
+	// 如果设为默认，先取消其他默认
+	if input.IsDefault != nil && *input.IsDefault {
+		s.db.Model(&model.SupportedLanguage{}).
+			Where("is_default = true AND id != ?", id).
+			Update("is_default", false)
+		lang.IsDefault = true
+	}
 
-	// Field 翻译字段：name / category_name
-	Field string `json:"field" binding:"required,oneof=name category_name" example:"name"`
+	if input.Name != nil {
+		lang.Name = *input.Name
+	}
+	if input.IsActive != nil {
+		lang.IsActive = *input.IsActive
+	}
+	if input.SortOrder != nil {
+		lang.SortOrder = *input.SortOrder
+	}
 
-	// Translations 各语言翻译内容列表
-	Translations []TranslationItem `json:"translations" binding:"required,min=1"`
+	if err := s.db.Save(&lang).Error; err != nil {
+		return nil, errors.New("更新失败")
+	}
+
+	return &lang, nil
 }
 
-// GetTranslationsInput 获取翻译请求参数
-type GetTranslationsInput struct {
-	// Module 模块名
-	Module string `json:"module" binding:"required"`
-	// RefID 关联记录 ID
-	RefID string `json:"ref_id" binding:"required"`
-	// Field 翻译字段
-	Field string `json:"field" binding:"required"`
+// DeleteLanguage 删除语言
+// 删除前检查是否有翻译内容使用此语言
+func (s *I18nService) DeleteLanguage(id string) error {
+	var lang model.SupportedLanguage
+	if err := s.db.Where("id = ?", id).First(&lang).Error; err != nil {
+		return errors.New("语言不存在")
+	}
+
+	// 默认语言不允许删除
+	if lang.IsDefault {
+		return errors.New("默认语言不允许删除")
+	}
+
+	// 检查是否有翻译内容使用此语言
+	var count int64
+	s.db.Model(&model.Translation{}).
+		Where("language_code = ?", lang.Code).
+		Count(&count)
+	if count > 0 {
+		return errors.New("该语言下还有翻译内容，请先删除相关翻译")
+	}
+
+	return s.db.Where("id = ?", id).Delete(&model.SupportedLanguage{}).Error
 }
 
 // TranslationResult 翻译结果
@@ -118,66 +153,6 @@ type TranslationResult struct {
 	Field string `json:"field"`
 	// Translations 各语言翻译
 	Translations []model.Translation `json:"translations"`
-}
-
-// SaveTranslations 批量保存翻译（存在则更新，不存在则创建）
-func (s *I18nService) SaveTranslations(input SaveTranslationsInput) error {
-	for _, t := range input.Translations {
-		translation := model.Translation{
-			Module:       input.Module,
-			RefID:        input.RefID,
-			Field:        input.Field,
-			LanguageCode: t.LanguageCode,
-			Content:      t.Content,
-		}
-
-		// upsert：有则更新，无则创建
-		var existing model.Translation
-		err := s.db.Where(
-			"module = ? AND ref_id = ? AND field = ? AND language_code = ?",
-			input.Module, input.RefID, input.Field, t.LanguageCode,
-		).First(&existing).Error
-
-		if err == gorm.ErrRecordNotFound {
-			if err := s.db.Create(&translation).Error; err != nil {
-				return errors.New("保存翻译失败")
-			}
-		} else {
-			if err := s.db.Model(&existing).Update("content", t.Content).Error; err != nil {
-				return errors.New("更新翻译失败")
-			}
-		}
-	}
-	return nil
-}
-
-// GetTranslations 获取某条记录的所有翻译
-func (s *I18nService) GetTranslations(input GetTranslationsInput) (*TranslationResult, error) {
-	var translations []model.Translation
-	err := s.db.
-		Where("module = ? AND ref_id = ? AND field = ?",
-			input.Module, input.RefID, input.Field).
-		Find(&translations).Error
-	if err != nil {
-		return nil, errors.New("获取翻译失败")
-	}
-
-	return &TranslationResult{
-		RefID:        input.RefID,
-		Field:        input.Field,
-		Translations: translations,
-	}, nil
-}
-
-// GetAllTranslationsByRef 获取某条记录的所有字段的所有翻译
-// 用于编辑页面一次性加载所有翻译
-func (s *I18nService) GetAllTranslationsByRef(module, refID string) ([]model.Translation, error) {
-	var translations []model.Translation
-	err := s.db.
-		Where("module = ? AND ref_id = ?", module, refID).
-		Order("field ASC, language_code ASC").
-		Find(&translations).Error
-	return translations, err
 }
 
 // DeleteTranslationsByRef 删除某条记录的所有翻译
