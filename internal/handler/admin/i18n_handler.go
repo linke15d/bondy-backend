@@ -21,7 +21,7 @@ func NewI18nHandler(i18nService *adminService.I18nService) *I18nHandler {
 //
 //	@Summary		创建语言
 //	@Description	添加一种新的支持语言，如英语、日语等
-//	@Tags			多语言管理
+//	@Tags			后台管理-多语言管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string												true	"Bearer {access_token}"
@@ -51,7 +51,7 @@ func (h *I18nHandler) CreateLanguage(c *gin.Context) {
 //
 //	@Summary		语言列表
 //	@Description	获取所有支持的语言列表，按排序值升序返回
-//	@Tags			多语言管理
+//	@Tags			后台管理-多语言管理
 //	@Produce		json
 //	@Param			Authorization	header		string													true	"Bearer {access_token}"
 //	@Success		200				{object}	response.Response{data=[]model.SupportedLanguage}		"语言列表"
@@ -71,7 +71,7 @@ func (h *I18nHandler) ListLanguages(c *gin.Context) {
 //
 //	@Summary		更新语言
 //	@Description	修改语言名称、排序、启用状态或设为默认语言
-//	@Tags			多语言管理
+//	@Tags			后台管理-多语言管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string												true	"Bearer {access_token}"
@@ -104,7 +104,7 @@ func (h *I18nHandler) UpdateLanguage(c *gin.Context) {
 //
 //	@Summary		删除语言
 //	@Description	删除指定语言，默认语言和有翻译内容的语言不允许删除
-//	@Tags			多语言管理
+//	@Tags			后台管理-多语言管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string				true	"Bearer {access_token}"

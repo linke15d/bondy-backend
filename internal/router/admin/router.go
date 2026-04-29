@@ -73,6 +73,7 @@ func Setup(
 			content.POST("/positions/list", contentHandler.ListSystemPositions)
 			content.POST("/positions/create", contentHandler.CreateSystemPosition)
 			content.POST("/positions/delete", contentHandler.DeleteSystemPosition)
+			content.POST("/positions/update", contentHandler.UpdateSystemPosition)
 		}
 
 		// 数据统计

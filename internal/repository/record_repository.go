@@ -117,47 +117,52 @@ type PositionsByCategory struct {
 
 // FindPositions 获取姿势列表
 // FindPositionsByCategory 获取姿势列表，按分类分组，填充对应语言翻译
-func (r *RecordRepository) FindPositions(coupleID string, lang string) ([]PositionsByCategory, error) {
-	categories := []string{"CLASSIC", "ADVENTURE", "INTIMATE", "FUN"}
+func (r *RecordRepository) FindPositionsByCategory(coupleID string, lang string) ([]PositionsByCategory, error) {
+	// 从数据库取启用的分类
+	var cats []model.PositionCategory
+	r.db.Where("is_active = true").Order("sort_order ASC").Find(&cats)
+
 	var result []PositionsByCategory
 
-	for _, cat := range categories {
+	for _, cat := range cats {
 		var positions []model.Position
 		err := r.db.
-			Where("(is_system = true OR couple_id = ?) AND category = ?", coupleID, cat).
-			Order("is_system DESC").
+			Where("(is_system = true OR couple_id = ?) AND category_id = ?", coupleID, cat.ID).
+			Order("created_at ASC").
 			Find(&positions).Error
 		if err != nil {
 			return nil, err
 		}
 
-		// 填充翻译
+		// 填充每个姿势的当前语言名称
 		for i := range positions {
-			// 填充 name 翻译
-			var nameTrans model.Translation
-			if err := r.db.Where(
-				"module = 'position' AND ref_id = ? AND field = 'name' AND language_code = ?",
-				positions[i].ID, lang,
-			).First(&nameTrans).Error; err == nil {
-				positions[i].Name = nameTrans.Content
+			var nameRecord model.PositionName
+			err := r.db.Where("position_id = ? AND language_code = ?",
+				positions[i].ID, lang).First(&nameRecord).Error
+			if err != nil {
+				// fallback 到 zh-CN
+				r.db.Where("position_id = ? AND language_code = ?",
+					positions[i].ID, "zh-CN").First(&nameRecord)
+			}
+			if nameRecord.Name != "" {
+				positions[i].Name = nameRecord.Name
 			} else {
-				// 没有翻译则用默认名称
 				positions[i].Name = positions[i].DefaultName
 			}
 		}
 
-		// 获取分类翻译
-		categoryName := cat
-		var catTrans model.Translation
-		if err := r.db.Where(
-			"module = 'position' AND ref_id = ? AND field = 'category_name' AND language_code = ?",
-			cat, lang,
-		).First(&catTrans).Error; err == nil {
-			categoryName = catTrans.Content
+		// 填充分类当前语言名称
+		var categoryName string
+		var catName model.PositionCategoryName
+		if err := r.db.Where("category_id = ? AND language_code = ?",
+			cat.ID, lang).First(&catName).Error; err == nil {
+			categoryName = catName.Name
+		} else {
+			categoryName = cat.DefaultName
 		}
 
 		result = append(result, PositionsByCategory{
-			Category:     cat,
+			Category:     cat.ID,
 			CategoryName: categoryName,
 			Positions:    positions,
 		})

@@ -281,7 +281,7 @@ func (s *RecordService) GetPositions(userID string, lang string) ([]repository.P
 	if err != nil {
 		return nil, errors.New("暂无伴侣关系")
 	}
-	return s.recordRepo.FindPositions(couple.ID, lang)
+	return s.recordRepo.FindPositionsByCategory(couple.ID, lang)
 }
 
 // GetPositionCategories 获取姿势分类列表

@@ -111,6 +111,8 @@ type Position struct {
 	CoupleID *string `gorm:"type:uuid;index" json:"couple_id,omitempty"`
 	// CreatedAt 创建时间
 	CreatedAt time.Time `json:"created_at"`
+	// Names 多语言名称列表，后台管理时返回
+	Names []PositionName `gorm:"foreignKey:PositionID" json:"names,omitempty"`
 }
 
 // CategoryNameMap 分类枚举值到中文的映射

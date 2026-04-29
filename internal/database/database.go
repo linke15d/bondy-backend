@@ -35,6 +35,7 @@ func Init(cfg *config.DBConfig) *gorm.DB {
 		&model.Tag{},
 		&model.PositionCategory{},
 		&model.Position{},
+		&model.PositionName{},
 		&model.Record{},
 		&model.Wishlist{},
 		&model.HealthRecord{},

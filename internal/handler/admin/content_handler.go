@@ -134,33 +134,65 @@ func (h *AdminContentHandler) DeleteSystemTag(c *gin.Context) {
 // ListSystemPositions 获取系统姿势列表
 //
 //	@Summary		系统姿势列表
-//	@Description	获取所有系统预设姿势
+//	@Description	获取所有系统预设姿势，支持按分类过滤、关键词搜索和分页
 //	@Tags			后台管理-内容管理
+//	@Accept			json
 //	@Produce		json
-//	@Param			Authorization	header		string									true	"Bearer {access_token}"
-//	@Success		200				{object}	response.Response{data=[]model.Position}	"姿势列表"
-//	@Failure		401				{object}	response.Response						"未登录"
+//	@Param			Authorization	header		string													true	"Bearer {access_token}"
+//	@Param			body			body		adminService.PositionListInput							true	"查询条件"
+//	@Success		200				{object}	response.Response{data=adminService.PositionListResult}	"姿势列表"
+//	@Failure		401				{object}	response.Response										"未登录"
 //	@Security		BearerAuth
 //	@Router			/admin/v1/content/positions/list [post]
 func (h *AdminContentHandler) ListSystemPositions(c *gin.Context) {
-	positions, err := h.contentService.ListSystemPositions()
+	var input adminService.PositionListInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	result, err := h.contentService.ListSystemPositions(input)
 	if err != nil {
 		response.ServerError(c)
 		return
 	}
 
-	response.Success(c, positions)
+	response.Success(c, result)
+}
+
+// CreatePositionRequest Swagger 展示用
+type CreatePositionRequest struct {
+	// Names 各语言名称列表
+	Names []PositionNameRequest `json:"names"`
+	// CategoryID 所属分类 ID
+	CategoryID string `json:"category_id" example:"uuid"`
+	// IconBase64 图标 base64，可选
+	IconBase64 *string `json:"icon_base64"`
+}
+
+// PositionNameRequest 单个语言姿势名称
+type PositionNameRequest struct {
+	LanguageCode string `json:"language_code" example:"zh-CN"`
+	Name         string `json:"name" example:"传教士"`
+}
+
+// UpdatePositionRequest Swagger 展示用
+type UpdatePositionRequest struct {
+	ID         string                `json:"id" binding:"required"`
+	Names      []PositionNameRequest `json:"names"`
+	CategoryID *string               `json:"category_id"`
+	IconBase64 *string               `json:"icon_base64"`
 }
 
 // CreateSystemPosition 创建系统姿势
 //
 //	@Summary		创建系统姿势
-//	@Description	创建一个新的系统预设姿势
+//	@Description	创建系统预设姿势，支持多语言名称，需要先创建分类后才能创建姿势
 //	@Tags			后台管理-内容管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string									true	"Bearer {access_token}"
-//	@Param			body			body		adminService.CreatePositionInput		true	"姿势信息"
+//	@Param			body			body		CreatePositionRequest					true	"姿势信息"
 //	@Success		201				{object}	response.Response{data=model.Position}	"创建成功"
 //	@Failure		400				{object}	response.Response						"参数错误"
 //	@Failure		401				{object}	response.Response						"未登录"
@@ -180,6 +212,39 @@ func (h *AdminContentHandler) CreateSystemPosition(c *gin.Context) {
 	}
 
 	response.Created(c, position)
+}
+
+// UpdateSystemPosition 更新系统姿势
+//
+//	@Summary		更新系统姿势
+//	@Description	修改姿势的多语言名称、分类或图标
+//	@Tags			后台管理-内容管理
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header		string									true	"Bearer {access_token}"
+//	@Param			body			body		UpdatePositionRequest					true	"更新内容（需包含 id）"
+//	@Success		200				{object}	response.Response{data=model.Position}	"更新后的姿势"
+//	@Failure		400				{object}	response.Response						"参数错误"
+//	@Failure		401				{object}	response.Response						"未登录"
+//	@Security		BearerAuth
+//	@Router			/admin/v1/content/positions/update [post]
+func (h *AdminContentHandler) UpdateSystemPosition(c *gin.Context) {
+	var req struct {
+		ID string `json:"id" binding:"required"`
+		adminService.UpdatePositionInput
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	position, err := h.contentService.UpdateSystemPosition(req.ID, req.UpdatePositionInput)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Success(c, position)
 }
 
 // DeleteSystemPosition 删除系统姿势

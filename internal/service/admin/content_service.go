@@ -32,17 +32,6 @@ type CreateTagInput struct {
 	IconBase64 *string `json:"icon_base64"`
 }
 
-// CreatePositionInput 创建系统姿势请求参数
-type CreatePositionInput struct {
-	// Name 姿势名称
-	Name string `json:"name" binding:"required,max=30" example:"传教士"`
-	// Category 分类：CLASSIC / ADVENTURE / INTIMATE / FUN
-	Category string `json:"category" binding:"required,oneof=CLASSIC ADVENTURE INTIMATE FUN" example:"CLASSIC"`
-	// IconBase64 图标 base64 编码，格式：data:image/png;base64,xxx
-	// 建议图标尺寸 64x64px 以内，大小不超过 50KB
-	IconBase64 *string `json:"icon_base64"`
-}
-
 // ListSystemTags 获取系统预设标签列表
 func (s *AdminContentService) ListSystemTags(tagType string) ([]model.Tag, error) {
 	var tags []model.Tag
@@ -241,11 +230,79 @@ func (s *AdminContentService) DeleteSystemTag(id string) error {
 	return s.db.Where("id = ? AND is_system = true", id).Delete(&model.Tag{}).Error
 }
 
-// ListSystemPositions 获取系统预设姿势列表
-func (s *AdminContentService) ListSystemPositions() ([]model.Position, error) {
+// PositionListInput 姿势列表查询参数
+type PositionListInput struct {
+	// CategoryID 按分类过滤，不传返回全部
+	CategoryID string `json:"category_id"`
+
+	// Keyword 搜索关键词，匹配姿势默认名称
+	Keyword string `json:"keyword"`
+
+	// Page 页码，默认 1
+	Page int `json:"page" binding:"omitempty,min=1" example:"1"`
+
+	// PageSize 每页数量，默认 20
+	PageSize int `json:"page_size" binding:"omitempty,min=1,max=100" example:"20"`
+}
+
+// PositionListResult 姿势列表返回结构
+type PositionListResult struct {
+	// List 姿势列表
+	List []model.Position `json:"list"`
+
+	// Total 总数量
+	Total int64 `json:"total"`
+
+	// Page 当前页码
+	Page int `json:"page"`
+
+	// PageSize 每页数量
+	PageSize int `json:"page_size"`
+}
+
+// ListSystemPositions 获取系统姿势列表（分页）
+func (s *AdminContentService) ListSystemPositions(input PositionListInput) (*PositionListResult, error) {
+	if input.Page == 0 {
+		input.Page = 1
+	}
+	if input.PageSize == 0 {
+		input.PageSize = 20
+	}
+
+	query := s.db.Model(&model.Position{}).
+		Preload("Category").
+		Where("is_system = true")
+
+	// 按分类过滤
+	if input.CategoryID != "" {
+		query = query.Where("category_id = ?", input.CategoryID)
+	}
+
+	// 关键词搜索
+	if input.Keyword != "" {
+		query = query.Where("default_name LIKE ?", "%"+input.Keyword+"%")
+	}
+
+	var total int64
+	query.Count(&total)
+
 	var positions []model.Position
-	err := s.db.Where("is_system = true").Order("name ASC").Find(&positions).Error
-	return positions, err
+	offset := (input.Page - 1) * input.PageSize
+	err := query.
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(input.PageSize).
+		Find(&positions).Error
+	if err != nil {
+		return nil, errors.New("获取姿势列表失败")
+	}
+
+	return &PositionListResult{
+		List:     positions,
+		Total:    total,
+		Page:     input.Page,
+		PageSize: input.PageSize,
+	}, nil
 }
 
 // validateBase64Icon 验证 base64 图标格式和大小
@@ -263,27 +320,170 @@ func validateBase64Icon(base64Str string) error {
 	return nil
 }
 
+// PositionNameInput 单个语言的姿势名称
+type PositionNameInput struct {
+	// LanguageCode 语言代码，如 zh-CN / en
+	LanguageCode string `json:"language_code" binding:"required" example:"zh-CN"`
+	// Name 该语言下的名称
+	Name string `json:"name" binding:"required,max=50" example:"传教士"`
+}
+
+// CreatePositionInput 创建系统姿势请求参数
+type CreatePositionInput struct {
+	// Names 各语言名称列表，至少传一种语言
+	Names []PositionNameInput `json:"names" binding:"required,min=1"`
+
+	// CategoryID 所属分类 ID
+	CategoryID string `json:"category_id" binding:"required"`
+
+	// IconBase64 图标 base64，可选
+	IconBase64 *string `json:"icon_base64"`
+}
+
+// UpdatePositionInput 更新姿势请求参数
+type UpdatePositionInput struct {
+	// Names 更新各语言名称，传入的语言会覆盖，未传的保持不变
+	Names []PositionNameInput `json:"names"`
+
+	// CategoryID 修改所属分类
+	CategoryID *string `json:"category_id"`
+
+	// IconBase64 修改图标
+	IconBase64 *string `json:"icon_base64"`
+}
+
 // CreateSystemPosition 创建系统预设姿势
 func (s *AdminContentService) CreateSystemPosition(input CreatePositionInput) (*model.Position, error) {
-	// 验证 base64 格式
+	// 验证分类是否存在
+	var category model.PositionCategory
+	if err := s.db.Where("id = ? AND is_active = true", input.CategoryID).First(&category).Error; err != nil {
+		return nil, errors.New("分类不存在或已禁用")
+	}
+
+	// 检查重复名称
+	for _, n := range input.Names {
+		var count int64
+		s.db.Model(&model.PositionName{}).
+			Where("language_code = ? AND name = ?", n.LanguageCode, n.Name).
+			Count(&count)
+		if count > 0 {
+			return nil, fmt.Errorf("「%s」名称已存在，请勿重复添加", n.Name)
+		}
+	}
+
+	// 验证 base64
 	if input.IconBase64 != nil {
 		if err := validateBase64Icon(*input.IconBase64); err != nil {
 			return nil, err
 		}
 	}
 
+	// 取中文名作为 DefaultName，没有中文则取第一个
+	defaultName := input.Names[0].Name
+	for _, n := range input.Names {
+		if n.LanguageCode == "zh-CN" {
+			defaultName = n.Name
+			break
+		}
+	}
+
 	position := &model.Position{
-		Name:       input.Name,
-		IconBase64: input.IconBase64,
-		IsSystem:   true,
+		DefaultName: defaultName,
+		CategoryID:  input.CategoryID,
+		IconBase64:  input.IconBase64,
+		IsSystem:    true,
 	}
-	if err := s.db.Create(position).Error; err != nil {
-		return nil, errors.New("创建失败")
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(position).Error; err != nil {
+			return errors.New("创建姿势失败")
+		}
+
+		for _, n := range input.Names {
+			name := model.PositionName{
+				PositionID:   position.ID,
+				LanguageCode: n.LanguageCode,
+				Name:         n.Name,
+			}
+			if err := tx.Create(&name).Error; err != nil {
+				return errors.New("保存语言名称失败")
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
+
+	s.db.Where("position_id = ?", position.ID).Find(&position.Names)
 	return position, nil
 }
 
-// DeleteSystemPosition 删除系统预设姿势
+// UpdateSystemPosition 更新系统姿势
+func (s *AdminContentService) UpdateSystemPosition(id string, input UpdatePositionInput) (*model.Position, error) {
+	var position model.Position
+	if err := s.db.Where("id = ? AND is_system = true", id).First(&position).Error; err != nil {
+		return nil, errors.New("姿势不存在")
+	}
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if input.CategoryID != nil {
+			position.CategoryID = *input.CategoryID
+		}
+		if input.IconBase64 != nil {
+			position.IconBase64 = input.IconBase64
+		}
+
+		if err := tx.Save(&position).Error; err != nil {
+			return errors.New("更新失败")
+		}
+
+		// 更新语言名称（upsert）
+		for _, n := range input.Names {
+			var existing model.PositionName
+			err := tx.Where("position_id = ? AND language_code = ?", id, n.LanguageCode).
+				First(&existing).Error
+			if err == gorm.ErrRecordNotFound {
+				newName := model.PositionName{
+					PositionID:   id,
+					LanguageCode: n.LanguageCode,
+					Name:         n.Name,
+				}
+				if err := tx.Create(&newName).Error; err != nil {
+					return errors.New("保存语言名称失败")
+				}
+			} else {
+				if err := tx.Model(&existing).Update("name", n.Name).Error; err != nil {
+					return errors.New("更新语言名称失败")
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	s.db.Where("position_id = ?", id).Find(&position.Names)
+	s.db.Preload("Category").First(&position, "id = ?", id)
+	return &position, nil
+}
+
+// DeleteSystemPosition 删除系统姿势
 func (s *AdminContentService) DeleteSystemPosition(id string) error {
-	return s.db.Where("id = ? AND is_system = true", id).Delete(&model.Position{}).Error
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// 先删除多语言名称
+		if err := tx.Where("position_id = ?", id).
+			Delete(&model.PositionName{}).Error; err != nil {
+			return errors.New("删除语言名称失败")
+		}
+		// 再删除姿势
+		if err := tx.Where("id = ? AND is_system = true", id).
+			Delete(&model.Position{}).Error; err != nil {
+			return errors.New("删除失败")
+		}
+		return nil
+	})
 }

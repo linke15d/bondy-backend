@@ -13,6 +13,9 @@ type PositionCategory struct {
 	// SortOrder 排序，数字越小越靠前
 	SortOrder int `gorm:"default:0" json:"sort_order" example:"1"`
 
+	// DefaultName 默认名称（中文），后台展示和搜索用
+	DefaultName string `gorm:"size:50;not null" json:"default_name" example:"经典"`
+
 	// IsActive 是否启用
 	IsActive bool `gorm:"default:true" json:"is_active"`
 
