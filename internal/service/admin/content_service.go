@@ -53,13 +53,18 @@ func (s *AdminContentService) ListSystemTags(tagType string) ([]model.Tag, error
 	return tags, err
 }
 
+// CategoryNameInput 单个语言的分类名称
+type CategoryNameInput struct {
+	// LanguageCode 语言代码，如 zh-CN / en
+	LanguageCode string `json:"language_code" binding:"required" example:"zh-CN"`
+	// Name 该语言下的名称
+	Name string `json:"name" binding:"required,max=50" example:"经典"`
+}
+
 // CreateCategoryInput 创建分类请求参数
 type CreateCategoryInput struct {
-	// Code 分类英文代码，唯一，建议全大写，如 CLASSIC
-	Code string `json:"code" binding:"required,max=50" example:"CLASSIC"`
-
-	// DefaultName 默认中文名称
-	DefaultName string `json:"default_name" binding:"required,max=50" example:"经典"`
+	// Names 各语言名称列表，至少传一种语言
+	Names []CategoryNameInput `json:"names" binding:"required,min=1"`
 
 	// SortOrder 排序值，数字越小越靠前
 	SortOrder int `json:"sort_order" example:"1"`
@@ -67,8 +72,8 @@ type CreateCategoryInput struct {
 
 // UpdateCategoryInput 更新分类请求参数
 type UpdateCategoryInput struct {
-	// DefaultName 修改默认名称
-	DefaultName *string `json:"default_name" binding:"omitempty,max=50"`
+	// Names 更新各语言名称，传入的语言会覆盖，未传的语言保持不变
+	Names []CategoryNameInput `json:"names"`
 
 	// SortOrder 修改排序
 	SortOrder *int `json:"sort_order"`
@@ -79,28 +84,41 @@ type UpdateCategoryInput struct {
 
 // CreatePositionCategory 创建姿势分类
 func (s *AdminContentService) CreatePositionCategory(input CreateCategoryInput) (*model.PositionCategory, error) {
-	// 检查 Code 是否已存在
-	var count int64
-	s.db.Model(&model.PositionCategory{}).Where("code = ?", input.Code).Count(&count)
-	if count > 0 {
-		return nil, errors.New("该分类代码已存在")
-	}
-
 	category := &model.PositionCategory{
-		Code:        input.Code,
-		DefaultName: input.DefaultName,
-		SortOrder:   input.SortOrder,
-		IsActive:    true,
+		SortOrder: input.SortOrder,
+		IsActive:  true,
 	}
 
-	if err := s.db.Create(category).Error; err != nil {
-		return nil, errors.New("创建分类失败")
+	// 开启事务
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(category).Error; err != nil {
+			return errors.New("创建分类失败")
+		}
+
+		// 批量插入各语言名称
+		for _, n := range input.Names {
+			name := model.PositionCategoryName{
+				CategoryID:   category.ID,
+				LanguageCode: n.LanguageCode,
+				Name:         n.Name,
+			}
+			if err := tx.Create(&name).Error; err != nil {
+				return errors.New("保存语言名称失败")
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
+	// 填充 Names
+	s.db.Where("category_id = ?", category.ID).Find(&category.Names)
 	return category, nil
 }
 
-// ListPositionCategories 获取分类列表（含多语言翻译）
+// ListPositionCategories 获取分类列表（含所有语言名称）
 func (s *AdminContentService) ListPositionCategories() ([]model.PositionCategory, error) {
 	var categories []model.PositionCategory
 	err := s.db.Order("sort_order ASC, created_at ASC").Find(&categories).Error
@@ -108,12 +126,9 @@ func (s *AdminContentService) ListPositionCategories() ([]model.PositionCategory
 		return nil, errors.New("获取分类列表失败")
 	}
 
-	// 填充每个分类的多语言翻译
+	// 填充每个分类的多语言名称
 	for i := range categories {
-		var translations []model.Translation
-		s.db.Where("module = 'position_category' AND ref_id = ?", categories[i].ID).
-			Find(&translations)
-		categories[i].Translations = translations
+		s.db.Where("category_id = ?", categories[i].ID).Find(&categories[i].Names)
 	}
 
 	return categories, nil
@@ -126,20 +141,45 @@ func (s *AdminContentService) UpdatePositionCategory(id string, input UpdateCate
 		return nil, errors.New("分类不存在")
 	}
 
-	if input.DefaultName != nil {
-		category.DefaultName = *input.DefaultName
-	}
-	if input.SortOrder != nil {
-		category.SortOrder = *input.SortOrder
-	}
-	if input.IsActive != nil {
-		category.IsActive = *input.IsActive
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if input.SortOrder != nil {
+			category.SortOrder = *input.SortOrder
+		}
+		if input.IsActive != nil {
+			category.IsActive = *input.IsActive
+		}
+		if err := tx.Save(&category).Error; err != nil {
+			return errors.New("更新失败")
+		}
+
+		// 更新语言名称（upsert）
+		for _, n := range input.Names {
+			var existing model.PositionCategoryName
+			err := tx.Where("category_id = ? AND language_code = ?", id, n.LanguageCode).
+				First(&existing).Error
+			if err == gorm.ErrRecordNotFound {
+				newName := model.PositionCategoryName{
+					CategoryID:   id,
+					LanguageCode: n.LanguageCode,
+					Name:         n.Name,
+				}
+				if err := tx.Create(&newName).Error; err != nil {
+					return errors.New("保存语言名称失败")
+				}
+			} else {
+				if err := tx.Model(&existing).Update("name", n.Name).Error; err != nil {
+					return errors.New("更新语言名称失败")
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.db.Save(&category).Error; err != nil {
-		return nil, errors.New("更新失败")
-	}
-
+	s.db.Where("category_id = ?", id).Find(&category.Names)
 	return &category, nil
 }
 

@@ -176,7 +176,7 @@ func (r *RecordRepository) CreatePosition(position *model.Position) error {
 	return r.db.Create(position).Error
 }
 
-// FindCategories 获取所有启用的分类，填充对应语言翻译
+// FindCategories 获取所有启用的分类，根据语言返回对应名称
 func (r *RecordRepository) FindCategories(lang string) ([]model.PositionCategory, error) {
 	var categories []model.PositionCategory
 	err := r.db.
@@ -187,15 +187,17 @@ func (r *RecordRepository) FindCategories(lang string) ([]model.PositionCategory
 		return nil, err
 	}
 
-	// 填充翻译
+	// 填充对应语言的名称
 	for i := range categories {
-		var trans model.Translation
-		if err := r.db.Where(
-			"module = 'position_category' AND ref_id = ? AND field = 'name' AND language_code = ?",
-			categories[i].ID, lang,
-		).First(&trans).Error; err == nil {
-			categories[i].DefaultName = trans.Content
+		var nameRecord model.PositionCategoryName
+		err := r.db.Where("category_id = ? AND language_code = ?",
+			categories[i].ID, lang).First(&nameRecord).Error
+		if err != nil {
+			// 找不到对应语言，fallback 到 zh-CN
+			r.db.Where("category_id = ? AND language_code = ?",
+				categories[i].ID, "zh-CN").First(&nameRecord)
 		}
+		categories[i].Name = nameRecord.Name
 	}
 
 	return categories, nil

@@ -196,7 +196,7 @@ func (h *AdminContentHandler) DeleteSystemPosition(c *gin.Context) {
 //
 //	@Summary		创建姿势分类
 //	@Description	创建一个新的姿势分类，支持后台配置多语言名称
-//	@Tags			内容管理
+//	@Tags			后台管理-内容管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string													true	"Bearer {access_token}"
@@ -226,7 +226,7 @@ func (h *AdminContentHandler) CreatePositionCategory(c *gin.Context) {
 //
 //	@Summary		姿势分类列表
 //	@Description	获取所有姿势分类，包含每个分类的多语言翻译
-//	@Tags			内容管理
+//	@Tags			后台管理-内容管理
 //	@Produce		json
 //	@Param			Authorization	header		string														true	"Bearer {access_token}"
 //	@Success		200				{object}	response.Response{data=[]model.PositionCategory}			"分类列表"
@@ -246,7 +246,7 @@ func (h *AdminContentHandler) ListPositionCategories(c *gin.Context) {
 //
 //	@Summary		更新姿势分类
 //	@Description	修改分类的名称、排序或启用状态
-//	@Tags			内容管理
+//	@Tags			后台管理-内容管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string													true	"Bearer {access_token}"
@@ -279,7 +279,7 @@ func (h *AdminContentHandler) UpdatePositionCategory(c *gin.Context) {
 //
 //	@Summary		删除姿势分类
 //	@Description	删除指定分类，如果该分类下有姿势则无法删除
-//	@Tags			内容管理
+//	@Tags			后台管理-内容管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string				true	"Bearer {access_token}"
