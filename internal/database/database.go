@@ -40,6 +40,7 @@ func Init(cfg *config.DBConfig) *gorm.DB {
 		&model.HealthRecord{},
 		&model.Subscription{},
 		&model.Admin{},
+		&model.SupportedLanguage{},
 	); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}
