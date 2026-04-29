@@ -276,7 +276,7 @@ type UpdateCategoryRequest struct {
 //
 //	@Summary		更新姿势分类
 //	@Description	修改分类的多语言名称、排序或启用状态，传入的语言名称会覆盖原有内容，未传的语言保持不变
-//	@Tags			内容管理
+//	@Tags			后台管理-内容管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string											true	"Bearer {access_token}"
