@@ -189,32 +189,23 @@ func (h *RecordHandler) DeleteRecord(c *gin.Context) {
 
 // GetTags 获取标签列表
 //
-//	@Summary		获取标签列表
-//	@Description	获取可用的标签列表，包括系统预设标签和当前伴侣自定义标签。type 传 LOCATION 获取地点标签，传 ACTIVITY 获取活动标签。
-//	@Tags			亲密记录
-//	@Accept			json
-//	@Produce		json
-//	@Param			Authorization	header		string								true	"Bearer {access_token}"
-//	@Param			body			body		GetTagsInput						true	"标签类型"
-//	@Success		200				{object}	response.Response{data=[]model.Tag}	"标签列表"
-//	@Failure		401				{object}	response.Response					"未登录"
-//	@Security		BearerAuth
-//	@Router			/api/v1/records/tags [post]
+// @Summary      获取标签列表
+// @Tags         亲密记录
+// @Produce      json
+// @Param        Authorization  header    string                                    true   "Bearer {access_token}"
+// @Param        lang           query     string                                    false  "语言代码，默认 zh-CN"
+// @Success      200            {object}  response.Response{data=[]model.Tag}
+// @Router       /api/v1/records/tags [post]
 func (h *RecordHandler) GetTags(c *gin.Context) {
-	userID := c.GetString("userID")
-
-	var input GetTagsInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		response.BadRequest(c, err.Error())
-		return
+	lang := c.Query("lang")
+	if lang == "" {
+		lang = "zh-CN"
 	}
-
-	tags, err := h.recordService.GetTags(userID, input.Type)
+	tags, err := h.recordService.GetTags(lang)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-
 	response.Success(c, tags)
 }
 

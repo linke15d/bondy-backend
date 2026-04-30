@@ -57,37 +57,6 @@ type Record struct {
 	Positions []Position `gorm:"many2many:record_positions;" json:"positions,omitempty"`
 }
 
-// Tag 标签表
-// 分为地点标签和活动标签两种类型
-// 系统预设标签（is_system=true）所有用户共享
-// 用户自定义标签（is_system=false）仅属于当前伴侣
-// 对应数据库表名: tags
-type Tag struct {
-	// ID 标签唯一标识
-	ID string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-
-	// DefaultName 默认名称（中文）
-	DefaultName string `gorm:"size:30;not null" json:"default_name" example:"家里"`
-
-	// Name 标签名称，如"家里"、"酒店"、"浪漫"
-	Name string `gorm:"size:30;not null" json:"name" example:"家里"`
-
-	// Type 标签类型：LOCATION（地点）或 ACTIVITY（活动）
-	Type string `gorm:"size:20;not null" json:"type" example:"LOCATION"`
-
-	// IconBase64 标签图标 base64
-	IconBase64 *string `gorm:"type:text" json:"icon_base64,omitempty"`
-
-	// IsSystem 是否为系统预设标签，系统标签不可删除
-	IsSystem bool `gorm:"default:false" json:"is_system"`
-
-	// CoupleID 所属伴侣 ID，系统标签此字段为空
-	CoupleID *string `gorm:"type:uuid;index" json:"couple_id,omitempty"`
-
-	// CreatedAt 创建时间
-	CreatedAt time.Time `json:"created_at"`
-}
-
 // Position 姿势表
 // Position 姿势表
 type Position struct {

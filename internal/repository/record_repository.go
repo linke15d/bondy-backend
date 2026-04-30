@@ -238,3 +238,32 @@ func (r *RecordRepository) FindLocations(lang string) ([]model.Location, error) 
 
 	return locations, nil
 }
+
+// FindTags 获取启用的标签列表，根据语言返回对应名称
+func (r *RecordRepository) FindTags(lang string) ([]model.Tag, error) {
+	var tags []model.Tag
+	err := r.db.
+		Where("is_system = true AND is_active = true").
+		Order("sort_order ASC").
+		Find(&tags).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range tags {
+		var nameRecord model.TagName
+		err := r.db.Where("tag_id = ? AND language_code = ?",
+			tags[i].ID, lang).First(&nameRecord).Error
+		if err != nil {
+			// fallback 到 zh-CN
+			r.db.Where("tag_id = ? AND language_code = ?",
+				tags[i].ID, "zh-CN").First(&nameRecord)
+		}
+		if nameRecord.Name != "" {
+			tags[i].Name = nameRecord.Name
+		} else {
+			tags[i].Name = tags[i].DefaultName
+		}
+	}
+	return tags, nil
+}

@@ -266,15 +266,6 @@ func (s *RecordService) DeleteRecord(userID string, recordID string) error {
 	return nil
 }
 
-// GetTags 获取标签列表
-func (s *RecordService) GetTags(userID string, tagType string) ([]model.Tag, error) {
-	couple, err := s.coupleRepo.FindByUserID(userID)
-	if err != nil {
-		return nil, errors.New("暂无伴侣关系")
-	}
-	return s.recordRepo.FindTagsByType(tagType, couple.ID)
-}
-
 // GetPositions 获取姿势列表
 func (s *RecordService) GetPositions(userID string, lang string) ([]repository.PositionsByCategory, error) {
 	couple, err := s.coupleRepo.FindByUserID(userID)
@@ -292,4 +283,9 @@ func (s *RecordService) GetPositionCategories(lang string) ([]model.PositionCate
 // GetLocations 获取地点列表
 func (s *RecordService) GetLocations(lang string) ([]model.Location, error) {
 	return s.recordRepo.FindLocations(lang)
+}
+
+// GetTags 获取标签列表
+func (s *RecordService) GetTags(lang string) ([]model.Tag, error) {
+	return s.recordRepo.FindTags(lang)
 }

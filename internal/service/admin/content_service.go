@@ -21,28 +21,6 @@ func NewAdminContentService(db *gorm.DB) *AdminContentService {
 	return &AdminContentService{db: db}
 }
 
-// CreateTagInput 创建系统标签请求参数
-type CreateTagInput struct {
-	// Name 标签名称
-	Name string `json:"name" binding:"required,max=30" example:"酒店"`
-
-	// Type 标签类型：LOCATION 或 ACTIVITY
-	Type string `json:"type" binding:"required,oneof=LOCATION ACTIVITY" example:"LOCATION"`
-
-	IconBase64 *string `json:"icon_base64"`
-}
-
-// ListSystemTags 获取系统预设标签列表
-func (s *AdminContentService) ListSystemTags(tagType string) ([]model.Tag, error) {
-	var tags []model.Tag
-	query := s.db.Where("is_system = true")
-	if tagType != "" {
-		query = query.Where("type = ?", tagType)
-	}
-	err := query.Order("type ASC, name ASC").Find(&tags).Error
-	return tags, err
-}
-
 // CategoryNameInput 单个语言的分类名称
 type CategoryNameInput struct {
 	// LanguageCode 语言代码，如 zh-CN / en
@@ -228,24 +206,6 @@ func (s *AdminContentService) DeletePositionCategory(id string) error {
 	})
 }
 
-// CreateSystemTag 创建系统预设标签
-func (s *AdminContentService) CreateSystemTag(input CreateTagInput) (*model.Tag, error) {
-	tag := &model.Tag{
-		Name:     input.Name,
-		Type:     input.Type,
-		IsSystem: true,
-	}
-	if err := s.db.Create(tag).Error; err != nil {
-		return nil, errors.New("创建标签失败")
-	}
-	return tag, nil
-}
-
-// DeleteSystemTag 删除系统预设标签
-func (s *AdminContentService) DeleteSystemTag(id string) error {
-	return s.db.Where("id = ? AND is_system = true", id).Delete(&model.Tag{}).Error
-}
-
 // PositionListInput 姿势列表查询参数
 type PositionListInput struct {
 	// CategoryID 按分类过滤，不传返回全部
@@ -279,7 +239,7 @@ type PositionListResult struct {
 	PageSize int `json:"page_size"`
 }
 
-// ListSystemPositions 获取系统姿势列表（分页）
+// ListSystemPositions 获取系统姿势列表
 func (s *AdminContentService) ListSystemPositions(input PositionListInput) (*PositionListResult, error) {
 	if input.Page == 0 {
 		input.Page = 1
@@ -516,4 +476,182 @@ func (s *AdminContentService) DeleteSystemPosition(id string) error {
 		}
 		return nil
 	})
+}
+
+type TagNameInput struct {
+	LanguageCode string `json:"language_code" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+}
+
+type CreateTagInput struct {
+	IconBase64 *string        `json:"icon_base64"`
+	SortOrder  int            `json:"sort_order"`
+	IsActive   bool           `json:"is_active"`
+	IsSystem   bool           `json:"is_system"`
+	Names      []TagNameInput `json:"names" binding:"required,min=1"`
+}
+
+type UpdateTagInput struct {
+	IconBase64 *string        `json:"icon_base64"`
+	SortOrder  *int           `json:"sort_order"`
+	IsActive   *bool          `json:"is_active"`
+	Names      []TagNameInput `json:"names"`
+}
+
+type TagListInput struct {
+	Keyword  string `json:"keyword"`
+	IsActive *bool  `json:"is_active"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"page_size"`
+}
+
+type TagListResult struct {
+	Total int64       `json:"total"`
+	List  []model.Tag `json:"list"`
+}
+
+// CreateTag 创建标签
+func (s *AdminContentService) CreateTag(input CreateTagInput) (*model.Tag, error) {
+	tag := model.Tag{
+		IconBase64: input.IconBase64,
+		SortOrder:  input.SortOrder,
+		IsActive:   input.IsActive,
+		IsSystem:   input.IsSystem,
+	}
+
+	for _, n := range input.Names {
+		if n.LanguageCode == "zh-CN" {
+			tag.DefaultName = n.Name
+			break
+		}
+	}
+	if tag.DefaultName == "" && len(input.Names) > 0 {
+		tag.DefaultName = input.Names[0].Name
+	}
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&tag).Error; err != nil {
+			return errors.New("创建标签失败")
+		}
+		for _, n := range input.Names {
+			name := model.TagName{
+				TagID:        tag.ID,
+				LanguageCode: n.LanguageCode,
+				Name:         n.Name,
+			}
+			if err := tx.Create(&name).Error; err != nil {
+				return errors.New("保存语言名称失败")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	s.db.Preload("Names").First(&tag, "id = ?", tag.ID)
+	return &tag, nil
+}
+
+// ListTags 后台标签列表
+func (s *AdminContentService) ListTags(input TagListInput) (*TagListResult, error) {
+	if input.Page <= 0 {
+		input.Page = 1
+	}
+	if input.PageSize <= 0 {
+		input.PageSize = 20
+	}
+
+	query := s.db.Model(&model.Tag{})
+	if input.Keyword != "" {
+		query = query.Where("default_name LIKE ?", "%"+input.Keyword+"%")
+	}
+	if input.IsActive != nil {
+		query = query.Where("is_active = ?", *input.IsActive)
+	}
+
+	var total int64
+	query.Count(&total)
+
+	var tags []model.Tag
+	err := query.Preload("Names").
+		Order("sort_order ASC, created_at DESC").
+		Offset((input.Page - 1) * input.PageSize).
+		Limit(input.PageSize).
+		Find(&tags).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &TagListResult{Total: total, List: tags}, nil
+}
+
+// UpdateTag 更新标签
+func (s *AdminContentService) UpdateTag(id string, input UpdateTagInput) (*model.Tag, error) {
+	var tag model.Tag
+	if err := s.db.First(&tag, "id = ?", id).Error; err != nil {
+		return nil, errors.New("标签不存在")
+	}
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if input.IconBase64 != nil {
+			tag.IconBase64 = input.IconBase64
+		}
+		if input.SortOrder != nil {
+			tag.SortOrder = *input.SortOrder
+		}
+		if input.IsActive != nil {
+			tag.IsActive = *input.IsActive
+		}
+
+		for _, n := range input.Names {
+			if n.LanguageCode == "zh-CN" {
+				tag.DefaultName = n.Name
+				break
+			}
+		}
+
+		if err := tx.Save(&tag).Error; err != nil {
+			return errors.New("更新失败")
+		}
+
+		for _, n := range input.Names {
+			var existing model.TagName
+			err := tx.Where("tag_id = ? AND language_code = ?", id, n.LanguageCode).
+				First(&existing).Error
+			if err == gorm.ErrRecordNotFound {
+				newName := model.TagName{
+					TagID:        id,
+					LanguageCode: n.LanguageCode,
+					Name:         n.Name,
+				}
+				if err := tx.Create(&newName).Error; err != nil {
+					return errors.New("保存语言名称失败")
+				}
+			} else {
+				if err := tx.Model(&existing).Update("name", n.Name).Error; err != nil {
+					return errors.New("更新语言名称失败")
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	s.db.Preload("Names").First(&tag, "id = ?", id)
+	return &tag, nil
+}
+
+// DeleteTag 删除标签（软删除）
+func (s *AdminContentService) DeleteTag(id string) error {
+	var tag model.Tag
+	if err := s.db.First(&tag, "id = ?", id).Error; err != nil {
+		return errors.New("标签不存在")
+	}
+	if err := s.db.Delete(&tag).Error; err != nil {
+		return errors.New("删除失败")
+	}
+	return nil
 }

@@ -66,9 +66,10 @@ func Setup(
 			content.POST("/categories/delete", contentHandler.DeletePositionCategory)
 
 			// 标签
-			content.POST("/tags/list", contentHandler.ListSystemTags)
-			content.POST("/tags/create", contentHandler.CreateSystemTag)
-			content.POST("/tags/delete", contentHandler.DeleteSystemTag)
+			content.POST("/tags/create", contentHandler.CreateTag)
+			content.POST("/tags/list", contentHandler.ListTags)
+			content.POST("/tags/update", contentHandler.UpdateTag) // ← 新增
+			content.POST("/tags/delete", contentHandler.DeleteTag)
 
 			// 姿势
 			content.POST("/positions/list", contentHandler.ListSystemPositions)
