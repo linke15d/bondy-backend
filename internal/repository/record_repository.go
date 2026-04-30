@@ -207,3 +207,34 @@ func (r *RecordRepository) FindCategories(lang string) ([]model.PositionCategory
 
 	return categories, nil
 }
+
+// FindLocations 获取启用的地点列表，根据语言返回对应名称
+func (r *RecordRepository) FindLocations(lang string) ([]model.Location, error) {
+	var locations []model.Location
+	err := r.db.
+		Where("is_system = true AND is_active = true").
+		Order("sort_order ASC").
+		Find(&locations).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 填充对应语言的名称
+	for i := range locations {
+		var nameRecord model.LocationName
+		err := r.db.Where("location_id = ? AND language_code = ?",
+			locations[i].ID, lang).First(&nameRecord).Error
+		if err != nil {
+			// fallback 到 zh-CN
+			r.db.Where("location_id = ? AND language_code = ?",
+				locations[i].ID, "zh-CN").First(&nameRecord)
+		}
+		if nameRecord.Name != "" {
+			locations[i].Name = nameRecord.Name
+		} else {
+			locations[i].Name = locations[i].DefaultName
+		}
+	}
+
+	return locations, nil
+}

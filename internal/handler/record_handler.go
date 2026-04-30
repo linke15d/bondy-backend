@@ -279,3 +279,30 @@ func (h *RecordHandler) GetPositionCategories(c *gin.Context) {
 
 	response.Success(c, categories)
 }
+
+// GetLocations 获取地点列表
+//
+//	@Summary		获取地点列表
+//	@Description	获取所有启用的系统预设地点，根据 Accept-Language Header 返回对应语言名称
+//	@Tags			亲密记录
+//	@Produce		json
+//	@Param			Authorization	header		string									true	"Bearer {access_token}"
+//	@Param			Accept-Language	header		string									false	"语言代码，默认 zh-CN"
+//	@Success		200				{object}	response.Response{data=[]model.Location}	"地点列表"
+//	@Failure		401				{object}	response.Response						"未登录"
+//	@Security		BearerAuth
+//	@Router			/api/v1/records/locations [post]
+func (h *RecordHandler) GetLocations(c *gin.Context) {
+	lang := c.GetString("lang")
+	if lang == "" {
+		lang = "zh-CN"
+	}
+
+	locations, err := h.recordService.GetLocations(lang)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Success(c, locations)
+}

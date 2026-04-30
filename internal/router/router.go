@@ -70,6 +70,7 @@ func Setup(
 			records.POST("/tags", recordHandler.GetTags)                     // 获取标签列表
 			records.POST("/positions", recordHandler.GetPositions)           // 获取姿势列表
 			records.POST("/categories", recordHandler.GetPositionCategories) //获取姿势分类列表
+			records.POST("/locations", recordHandler.GetLocations)           //获取地点列表
 		}
 
 		// 数据统计

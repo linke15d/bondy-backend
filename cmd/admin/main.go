@@ -72,6 +72,9 @@ func main() {
 	i18nService := adminService.NewI18nService(db)
 	i18nHandler := adminHandler.NewI18nHandler(i18nService)
 
+	locationService := adminService.NewLocationService(db)
+	locationHandler := adminHandler.NewLocationHandler(locationService)
+
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -89,7 +92,8 @@ func main() {
 	})
 
 	adminRouter.Setup(r, jwtManager, adminAuthHandler, adminUserHandler,
-		adminRecordHandler, adminSubHandler, adminStatsHandler, adminContentHandler, i18nHandler)
+		adminRecordHandler, adminSubHandler, adminStatsHandler,
+		adminContentHandler, i18nHandler, locationHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.App.AdminPort)
 	log.Printf("后台管理服务启动，监听端口 %s", addr)

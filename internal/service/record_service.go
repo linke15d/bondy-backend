@@ -288,3 +288,8 @@ func (s *RecordService) GetPositions(userID string, lang string) ([]repository.P
 func (s *RecordService) GetPositionCategories(lang string) ([]model.PositionCategory, error) {
 	return s.recordRepo.FindCategories(lang)
 }
+
+// GetLocations 获取地点列表
+func (s *RecordService) GetLocations(lang string) ([]model.Location, error) {
+	return s.recordRepo.FindLocations(lang)
+}

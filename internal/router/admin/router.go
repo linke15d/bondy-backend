@@ -23,6 +23,7 @@ func Setup(
 	statsHandler *adminHandler.AdminStatsHandler,
 	contentHandler *adminHandler.AdminContentHandler,
 	i18nHandler *adminHandler.I18nHandler,
+	locationHandler *adminHandler.LocationHandler,
 ) {
 	// Swagger 文档
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(
@@ -74,6 +75,15 @@ func Setup(
 			content.POST("/positions/create", contentHandler.CreateSystemPosition)
 			content.POST("/positions/delete", contentHandler.DeleteSystemPosition)
 			content.POST("/positions/update", contentHandler.UpdateSystemPosition)
+		}
+
+		// 地点管理
+		locations := protected.Group("/content/locations")
+		{
+			locations.POST("/create", locationHandler.CreateLocation)
+			locations.POST("/list", locationHandler.ListLocations)
+			locations.POST("/update", locationHandler.UpdateLocation)
+			locations.POST("/delete", locationHandler.DeleteLocation)
 		}
 
 		// 数据统计
