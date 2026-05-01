@@ -53,6 +53,11 @@ func (r *RecordRepository) List(coupleID string, filter ListFilter) ([]model.Rec
 	var records []model.Record
 	var total int64
 
+	// 加空值判断
+	if coupleID == "" {
+		return records, 0, nil
+	}
+
 	query := r.db.Model(&model.Record{}).
 		Where("couple_id = ? AND is_deleted = false", coupleID)
 
