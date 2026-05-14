@@ -34,12 +34,12 @@ func NewAuthService(userRepo *repository.UserRepository, jwtManager *jwtpkg.Mana
 type RegisterInput struct {
 	// Email 注册邮箱，必须是合法的邮箱格式，注册后作为登录账号
 	Email string `json:"email" binding:"required,email" example:"user@example.com"`
-
 	// Password 登录密码，最少8位，建议包含字母和数字
 	Password string `json:"password" binding:"required,min=8" example:"password123"`
-
 	// Nickname 用户昵称，显示在 App 界面，2到20个字符
 	Nickname string `json:"nickname" binding:"required,min=2,max=20" example:"小明"`
+	// Gender 用户性别，app端选择
+	Gender string `json:"gender" binding:"required,oneof=male female other"`
 }
 
 // LoginInput 登录接口请求参数
@@ -90,6 +90,7 @@ func (s *AuthService) Register(input RegisterInput) (*AuthResult, error) {
 		Email:        &input.Email,
 		PasswordHash: &hashStr,
 		Nickname:     &input.Nickname,
+		Gender:       input.Gender,
 	}
 
 	if err := s.userRepo.Create(user); err != nil {

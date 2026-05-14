@@ -42,6 +42,9 @@ type User struct {
 	// FCMToken Firebase 推送通知 token，用于向设备发送消息，不在 API 响应中返回
 	FCMToken *string `gorm:"size:500" json:"-"`
 
+	//性别
+	Gender string `gorm:"type:varchar(10)" json:"gender"`
+
 	// CreatedAt 账号创建时间
 	CreatedAt timeformat.LocalTime `json:"created_at" example:"2024-01-01 12:00:00"`
 
