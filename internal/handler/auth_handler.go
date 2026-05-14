@@ -88,15 +88,29 @@ func (h *AuthHandler) Register(c *gin.Context) {
 //	@Failure		401		{object}	response.Response							"邮箱或密码错误 或 账号已被封禁"
 //	@Router			/api/v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
+	lang := c.GetString("lang")
+
 	var input service.LoginInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		response.BadRequest(c, err.Error())
+		validationErrors, ok := err.(validator.ValidationErrors)
+		if ok && len(validationErrors) > 0 {
+			switch validationErrors[0].Field() {
+			case "Email":
+				response.BadRequest(c, i18n.Get("email_required", lang))
+			case "Password":
+				response.BadRequest(c, i18n.Get("password_required", lang))
+			default:
+				response.BadRequest(c, i18n.Get("invalid_params", lang))
+			}
+			return
+		}
+		response.BadRequest(c, i18n.Get("invalid_params", lang))
 		return
 	}
 
 	result, err := h.authService.Login(input)
 	if err != nil {
-		response.Fail(c, http.StatusUnauthorized, err.Error())
+		response.Fail(c, http.StatusUnauthorized, i18n.Get(err.Error(), lang))
 		return
 	}
 

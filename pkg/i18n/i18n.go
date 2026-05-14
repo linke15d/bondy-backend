@@ -41,6 +41,26 @@ var messages = map[string]map[string]string{
 		"en": "Invalid parameters",
 		"ja": "パラメータの形式が正しくありません",
 	},
+	"email_required": {
+		"zh": "邮箱不能为空",
+		"en": "Email is required",
+		"ja": "メールアドレスは必須です",
+	},
+	"password_required": {
+		"zh": "密码不能为空",
+		"en": "Password is required",
+		"ja": "パスワードは必須です",
+	},
+	"email_or_password_wrong": {
+		"zh": "邮箱或密码错误",
+		"en": "Incorrect email or password",
+		"ja": "メールアドレスまたはパスワードが正しくありません",
+	},
+	"account_banned": {
+		"zh": "账号已被封禁",
+		"en": "Account has been banned",
+		"ja": "アカウントが停止されています",
+	},
 }
 
 // Get 根据 key 和语言返回对应提示，找不到则返回英文，再找不到返回 key 本身

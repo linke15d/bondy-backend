@@ -103,19 +103,19 @@ func (s *AuthService) Login(input LoginInput) (*AuthResult, error) {
 	user, err := s.userRepo.FindByEmail(input.Email)
 	if err != nil {
 		// 返回模糊错误，防止攻击者通过错误信息枚举已注册邮箱
-		return nil, errors.New("邮箱或密码错误")
+		return nil, errors.New("email_or_password_wrong")
 	}
 
 	if user.IsBlocked {
-		return nil, errors.New("账号已被禁用，请联系客服")
+		return nil, errors.New("account_banned")
 	}
 
 	if user.PasswordHash == nil {
-		return nil, errors.New("邮箱或密码错误")
+		return nil, errors.New("email_or_password_wrong")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(input.Password)); err != nil {
-		return nil, errors.New("邮箱或密码错误")
+		return nil, errors.New("email_or_password_wrong")
 	}
 
 	return s.generateTokenPair(user)
