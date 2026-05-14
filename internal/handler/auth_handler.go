@@ -7,7 +7,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/linke15d/bondy-backend/internal/service"
+	"github.com/linke15d/bondy-backend/pkg/i18n"
 	"github.com/linke15d/bondy-backend/pkg/response"
 )
 
@@ -40,15 +42,33 @@ type RefreshTokenInput struct {
 //	@Failure		500		{object}	response.Response							"服务器内部错误"
 //	@Router			/api/v1/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
+	lang := c.GetString("lang")
+
 	var input service.RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		response.BadRequest(c, err.Error())
+		validationErrors, ok := err.(validator.ValidationErrors)
+		if ok && len(validationErrors) > 0 {
+			switch validationErrors[0].Field() {
+			case "Email":
+				response.BadRequest(c, i18n.Get("email_invalid", lang))
+			case "Password":
+				response.BadRequest(c, i18n.Get("password_too_short", lang))
+			case "Nickname":
+				response.BadRequest(c, i18n.Get("nickname_required", lang))
+			case "Gender":
+				response.BadRequest(c, i18n.Get("gender_invalid", lang))
+			default:
+				response.BadRequest(c, i18n.Get("invalid_params", lang))
+			}
+			return
+		}
+		response.BadRequest(c, i18n.Get("invalid_params", lang))
 		return
 	}
 
 	result, err := h.authService.Register(input)
 	if err != nil {
-		response.Fail(c, http.StatusBadRequest, err.Error())
+		response.Fail(c, http.StatusBadRequest, i18n.Get(err.Error(), lang))
 		return
 	}
 

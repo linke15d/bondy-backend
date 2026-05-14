@@ -25,6 +25,9 @@ func Setup(
 ) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	//全局注册语言中间件
+	r.Use(middleware.Lang())
+
 	v1 := r.Group("/api/v1")
 
 	// ── 无需登录 ──

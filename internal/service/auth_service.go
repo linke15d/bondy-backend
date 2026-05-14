@@ -68,21 +68,18 @@ type AuthResult struct {
 }
 
 // Register 用户注册
-// 流程：检查邮箱是否已注册 → 密码哈希 → 创建用户 → 生成 token 对
 func (s *AuthService) Register(input RegisterInput) (*AuthResult, error) {
-	// 检查邮箱是否已存在
 	existing, err := s.userRepo.FindByEmail(input.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.New("服务器错误")
+		return nil, errors.New("server_error")
 	}
 	if existing != nil {
-		return nil, errors.New("该邮箱已被注册")
+		return nil, errors.New("email_registered")
 	}
 
-	// 密码哈希，cost=12 是安全与性能的平衡点
 	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), 12)
 	if err != nil {
-		return nil, errors.New("密码处理失败")
+		return nil, errors.New("server_error")
 	}
 
 	hashStr := string(hash)
@@ -94,7 +91,7 @@ func (s *AuthService) Register(input RegisterInput) (*AuthResult, error) {
 	}
 
 	if err := s.userRepo.Create(user); err != nil {
-		return nil, errors.New("注册失败，请重试")
+		return nil, errors.New("register_failed")
 	}
 
 	return s.generateTokenPair(user)
